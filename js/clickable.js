@@ -78,9 +78,11 @@ class UserVector extends p5.Vector {
 		// the right basis and since now the dragged vector may be in its transformed
 		// position, the new x, y values in the u, v basis may be obtained by inverting
 		// the transformation on the vector shown in the screen.
-		let inverted = this.get_invt();
-		this.x = inverted.x;
-		this.y = inverted.y;
+		if (this.clickable.drag) {
+			let inverted = this.get_invt();
+			this.x = inverted.x;
+			this.y = inverted.y;
+		}
 
 	}
 	// The vector in the u, v basis in units. To get this vector, get_invt() multiplies the
