@@ -1,7 +1,7 @@
 
 
 function transform_mouse() {
-	let transform = window.drawingContext.getTransform();
+	let transform = getMatrix();
 	let mouse = createVector(mouseX, mouseY);
 	// Apply the translate transformations.
 	mouse.x -= transform.e;
@@ -11,6 +11,10 @@ function transform_mouse() {
 	mouse.x = mouse.x * transform.a + mouse.y * transform.c;
 	mouse.y = mouse.x * transform.b + mouse.y * transform.d;
 	return mouse;
+}
+
+function getMatrix() {
+	return window.drawingContext.getTransform();
 }
 
 // Code from: https://stackoverflow.com/questions/27205018/multiply-2-matrices-in-javascript/48694670

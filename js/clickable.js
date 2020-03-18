@@ -1,5 +1,10 @@
+// Constants.
+const HITBOX = "hitbox";
+const NODRAW = "nodraw";
 
 let is_dragging = false; // Global variable to ensure only on object can be dragged at a time.
+
+let show_hitbox = false;
 
 /*
  * The class UserVector extends from p5.Vector wich means it can be used on vector operations
@@ -27,14 +32,19 @@ class UserVector extends p5.Vector {
 		this.color = clr !== undefined ? clr : color(0, 255, 0);
 		// The starting position of the vector (in pixels);
 		this.start = this.copy().mult(scl);
+
+		// The shape of the triangle that acts as a hitbox for the mouse when clicking the vector.
+		let shape = new Shape([createVector(-22, 8),
+							   createVector(-22, -8),
+							   createVector(0, 0)]);
 		// The clickable object that allows the user to drag the vector.
-		this.clickable = new Clickable(Shape.regular_polygon(0, 0, 13, 5)/*, () => {}*/);
+		this.clickable = new Clickable(shape, show_hitbox ? HITBOX : NODRAW);
 
 		this.i = createVector(1, 0);
 		this.j = createVector(0, 1);
 	}
 	draw() {
-		strokeWeight(3);
+		strokeWeight(5);
 		fill(this.color);
 		stroke(this.color);
 		// Draw the transformed scaled (in pixels) vector with its origin in the global o = (0, 0) vector.
@@ -48,6 +58,10 @@ class UserVector extends p5.Vector {
 		// handled by the clickable object itself, since the user will have to
 		// drag the vector manually.
 		translate(this.start.x, this.start.y);
+
+		let angle = atan2(this.tscl.y, this.tscl.x);
+		this.clickable.bounding_box.rotate_to(angle);
+
 		// Updates the clickable object.
 		this.clickable.update();
 		pop();
@@ -91,7 +105,7 @@ class UserVector extends p5.Vector {
 		return createVector(this.x * this.i.x + this.y * this.j.x,
 							this.x * this.i.y + this.y * this.j.y);
 	}
-	// The tranformed vector in pixel values. In this case, its just exactly what is
+	// The transformed vector in pixel values. In this case, its just exactly what is
 	// shown in the screen.
 	get tscl() {
 		return p5.Vector.mult(this.t, scl);
@@ -113,11 +127,10 @@ class UserVector extends p5.Vector {
  * function needs to draw things translatable with the translate() function within p5js.
  */
 class Clickable {
-	constructor(bounding_box, update, nodraw=false) {
+	constructor(bounding_box, update) {
 		this.bounding_box = bounding_box;
 		this.draw = update;
 		this.drag = false;
-		this.nodraw = nodraw;
 		// x and y offsets from the where the objects initiated.
 		this.offset = createVector(0, 0);
 
@@ -161,11 +174,13 @@ class Clickable {
 				this.mouse_drag = createVector(0, 0);
 			}
 		}
+		//rotate(PI/6);
+		//console.log(window.drawingContext.getTransform());
 
 		// Draw the object.
-		if (this.draw === undefined)
+		if (this.draw === "hitbox")
 			this.bounding_box.draw();
-		else if (!this.nodraw)
+		else if (typeof this.draw == "function")
 			this.draw();
 
 		pop();
@@ -203,8 +218,20 @@ class Shape {
 		}
 		return new Shape(vert);
 	}
+	static rect(x, y, w, h, mode=CORNER) {
+		let vert;
+		if (mode == CORNER)
+			vert = [createVector(x, y), createVector(x+w, y),
+					createVector(x+w, y+h), createVector(x, y+h)];
+		else
+			vert = [createVector(x-w/2, y-h/2), createVector(x+w/2, y-h/2),
+					createVector(x+w/2, y+h/2), createVector(x-w/2, y+h/2)]
+
+		return new Shape(vert);
+	}
 	constructor(vertices) {
 		this.vertices = vertices;
+		this.rotation = 0;
 	}
 	hover() {
 		let right = createVector(1, 0);
@@ -233,5 +260,25 @@ class Shape {
 		}
 		endShape(CLOSE);
 	}
+	// Rotate all vertices by some angle.
+	rotate_to(ang) {
+		let rot = ang - this.rotation;
+		for (let i = 0; i < this.vertices.length; i++) {
+			let x = this.vertices[i].x * cos(rot) - this.vertices[i].y * sin(rot);
+			let y = this.vertices[i].x * sin(rot) + this.vertices[i].y * cos(rot);
+			this.vertices[i].x = x;
+			this.vertices[i].y = y;
+		}
+		this.rotation = ang;
+	}
 }
 
+// Function that is called whenever the mouse is beeing dragged. Its called by p5.js
+// This is ment to prevento one from dragging the mouse arround and "grabing" the clickables.
+function mouseDragged() {
+	if (!is_dragging) is_dragging = true;
+}
+// Function resets the is_dragging variable.
+function mouseReleased() {
+	if (is_dragging) is_dragging = false;
+}

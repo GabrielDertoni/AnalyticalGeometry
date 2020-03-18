@@ -3,16 +3,17 @@
  */
 
 function vector_arrow(vector, point) {
-	let offset = 10;
+	let offset = 16;
 	let dest = p5.Vector.add(point, vector);
-	line(point.x, point.y, dest.x, dest.y);
+	let end = p5.Vector.sub(dest, dest.copy().normalize().mult(offset * 0.5));
+	line(point.x, point.y, end.x, end.y);
 
 	push() //start new drawing state
     let angle = atan2(-vector.y, -vector.x); //gets the angle of the line
     translate(dest.x, dest.y); //translates to the destination vertex
     rotate(angle - HALF_PI); //rotates the arrow point
 	noStroke();
-    triangle(-offset * 0.5, offset, offset * 0.5, offset, 0, -offset / 2); //draws the arrow point as a triangle
+    triangle(-offset * 0.5, offset * 1.4, offset * 0.5, offset * 1.4, 0, -offset * 0.1); //draws the arrow point as a triangle
     pop();
 }
 
