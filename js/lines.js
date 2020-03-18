@@ -2,13 +2,35 @@
  * This files contains a set of functions for drawing lines, arrows, etc.
  */
 
-function vector_arrow(vector, point) {
+function vector_arrow(vector, point, label) {
 	let offset = 16;
 	let dest = p5.Vector.add(point, vector);
 	let end = p5.Vector.sub(dest, dest.copy().normalize().mult(offset * 0.5));
 	line(point.x, point.y, end.x, end.y);
 
-	push() //start new drawing state
+	if (label !== undefined) {
+		let fsize = 35; // Font size
+		let toff = fsize * 0.8 - fsize * 0.4 * abs(down.dot(dest)) / dest.mag();
+		let perpendicular;
+		if (right.cross(dest).mag() < eps) perpendicular = createVector(dest.y / dest.x, -1).normalize().mult(toff);
+		else perpendicular = createVector(1, -dest.x / dest.y).normalize().mult(toff);
+
+		strokeWeight(1);
+		push();
+		if (Math.sign(perpendicular.y) > 0)
+			translate(dest.x / 2 + perpendicular.x, dest.y / 2 + perpendicular.y - fsize * 0.5);
+		else
+			translate(dest.x / 2 + perpendicular.x, dest.y / 2 + perpendicular.y);
+
+		push();
+		scale(1, -1);
+		textSize(fsize);
+		text(label, -7, 0);
+		pop();
+		pop();
+	}
+
+	push(); //start new drawing state
     let angle = atan2(-vector.y, -vector.x); //gets the angle of the line
     translate(dest.x, dest.y); //translates to the destination vertex
     rotate(angle - HALF_PI); //rotates the arrow point
@@ -18,8 +40,8 @@ function vector_arrow(vector, point) {
 }
 
 function paralel_line_space(vector, point) {
-	let top_line = line_intersection(vector, point, u, p5.Vector.mult(v, top_bound));
-	let bottom_line = line_intersection(vector, point, u, p5.Vector.mult(v, bottom_bound));
+	let top_line = line_intersection(vector, point, u, p5.Vector.mult(v, top_bound*space_size));
+	let bottom_line = line_intersection(vector, point, u, p5.Vector.mult(v, bottom_bound*space_size));
 	
 	// Check whether the line is paralel to the left and right borders.
 	if (v.cross(vector).mag() < eps) {
@@ -27,8 +49,8 @@ function paralel_line_space(vector, point) {
 		return;
 	}
 
-	let left_line = line_intersection(vector, point, v, p5.Vector.mult(u, left_bound));
-	let right_line = line_intersection(vector, point, v, p5.Vector.mult(u, right_bound));
+	let left_line = line_intersection(vector, point, v, p5.Vector.mult(u, left_bound*space_size));
+	let right_line = line_intersection(vector, point, v, p5.Vector.mult(u, right_bound*space_size));
 	
 	line(left_line.x, left_line.y, right_line.x, right_line.y);
 }

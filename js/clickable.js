@@ -25,11 +25,12 @@ let show_hitbox = false;
  * scl variable. Pixels are a fixed unit and have a direct relation to pixel size in html canvas.
  */
 class UserVector extends p5.Vector {
-	constructor(x, y, clr) {
+	constructor(x, y, clr, label) {
 		// The x, y values of the vector will always be written in the u, v basis and in units.
 		super(x, y, 0);
+		this.label = label !== undefined ? label : "";
 		// The color to use to display the vector.
-		this.color = clr !== undefined ? clr : color(0, 255, 0);
+		this.color = clr !== undefined ? clr : color(254, 247, 49);
 		// The starting position of the vector (in pixels);
 		this.start = this.copy().mult(scl);
 
@@ -38,7 +39,7 @@ class UserVector extends p5.Vector {
 							   createVector(-22, -8),
 							   createVector(0, 0)]);
 		// The clickable object that allows the user to drag the vector.
-		this.clickable = new Clickable(shape, show_hitbox ? HITBOX : NODRAW);
+		this.clickable = new Clickable(shape);
 
 		this.i = createVector(1, 0);
 		this.j = createVector(0, 1);
@@ -48,7 +49,7 @@ class UserVector extends p5.Vector {
 		fill(this.color);
 		stroke(this.color);
 		// Draw the transformed scaled (in pixels) vector with its origin in the global o = (0, 0) vector.
-		vector_arrow(this.tscl, o);
+		vector_arrow(this.tscl, o, this.label);
 
 		push();
 		// Translates the clickable object to the tip of the vector.
@@ -59,6 +60,7 @@ class UserVector extends p5.Vector {
 		// drag the vector manually.
 		translate(this.start.x, this.start.y);
 
+		// Rotates the bounding box to match the arrow of the vector.
 		let angle = atan2(this.tscl.y, this.tscl.x);
 		this.clickable.bounding_box.rotate_to(angle);
 
@@ -174,14 +176,12 @@ class Clickable {
 				this.mouse_drag = createVector(0, 0);
 			}
 		}
-		//rotate(PI/6);
-		//console.log(window.drawingContext.getTransform());
 
 		// Draw the object.
-		if (this.draw === "hitbox")
-			this.bounding_box.draw();
-		else if (typeof this.draw == "function")
+		if (typeof this.draw == "function")
 			this.draw();
+		else if (show_hitbox)
+			this.bounding_box.draw();
 
 		pop();
 	}
