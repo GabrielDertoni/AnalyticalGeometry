@@ -1,2 +1,7 @@
 *.swp
 .DS_Store
+.firebaserc
+firebase.json
+dist/
+*.log
+.firebase/
