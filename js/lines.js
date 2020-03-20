@@ -2,14 +2,14 @@
  * This files contains a set of functions for drawing lines, arrows, etc.
  */
 
-function vector_arrow(vector, point, label) {
-	let offset = 16;
+function vector_arrow(vector, point, label, offset) {
+	offset = offset !== undefined ? offset : 16;
 	let dest = p5.Vector.add(point, vector);
 	let end = p5.Vector.sub(dest, dest.copy().normalize().mult(offset * 0.5));
 	line(point.x, point.y, end.x, end.y);
 
 	if (label !== undefined) {
-		let fsize = 35; // Font size
+		let fsize = offset*2; // Font size
 		let toff = fsize * 0.8 - fsize * 0.4 * abs(down.dot(dest)) / dest.mag();
 		let perpendicular;
 		if (right.cross(dest).mag() < eps) perpendicular = createVector(dest.y / dest.x, -1).normalize().mult(toff);

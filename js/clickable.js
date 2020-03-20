@@ -25,19 +25,24 @@ let show_hitbox = false;
  * scl variable. Pixels are a fixed unit and have a direct relation to pixel size in html canvas.
  */
 class UserVector extends p5.Vector {
-	constructor(x, y, clr, label) {
+	constructor(x, y, label, clr, weight) {
 		// The x, y values of the vector will always be written in the u, v basis and in units.
 		super(x, y, 0);
 		this.label = label !== undefined ? label : "";
 		// The color to use to display the vector.
 		this.color = clr !== undefined ? clr : color(254, 247, 49);
+		this.weight = weight !== undefined ? weight : 3;
+		this.tip_size = sqrt(this.weight * 77 / 6)*2; // Relation with the area of the tip.
+		//this.tip_size = pow(this.weight * 310 / 3, 1/3) * 2; // Equation that looks preatty on screen.
+
 		// The starting position of the vector (in pixels);
 		this.start = this.copy().mult(scl);
 
 		// The shape of the triangle that acts as a hitbox for the mouse when clicking the vector.
-		let shape = new Shape([createVector(-22, 8),
-							   createVector(-22, -8),
+		let shape = new Shape([createVector(-this.tip_size*1.5, this.tip_size/2),
+							   createVector(-this.tip_size*1.5, -this.tip_size/2),
 							   createVector(0, 0)]);
+
 		// The clickable object that allows the user to drag the vector.
 		this.clickable = new Clickable(shape);
 
@@ -45,12 +50,13 @@ class UserVector extends p5.Vector {
 		this.j = createVector(0, 1);
 	}
 	draw() {
-		strokeWeight(5);
+		strokeWeight(this.weight);
 		fill(this.color);
 		stroke(this.color);
 		// Draw the transformed scaled (in pixels) vector with its origin in the global o = (0, 0) vector.
-		vector_arrow(this.tscl, o, this.label);
-
+		vector_arrow(this.tscl, o, this.label, this.tip_size);
+	}
+	update() {
 		push();
 		// Translates the clickable object to the tip of the vector.
 		// In this case its the starting position of the vector (in pixels)
@@ -83,7 +89,6 @@ class UserVector extends p5.Vector {
 			this.x = inverted.x;
 			this.y = inverted.y;
 		}
-
 	}
 	// The vector in the u, v basis in units. To get this vector, get_invt() multiplies the
 	// vector shown in screen written in units by the inverse of the transformation matrix.
@@ -277,10 +282,10 @@ class Shape {
 
 // Function that is called whenever the mouse is beeing dragged. Its called by p5.js
 // This is ment to prevento one from dragging the mouse arround and "grabing" the clickables.
-function mouseDragged() {
-	if (!is_dragging) is_dragging = true;
-}
+//function mouseDragged() {
+	//if (!is_dragging) is_dragging = true;
+//}
 // Function resets the is_dragging variable.
-function mouseReleased() {
-	if (is_dragging) is_dragging = false;
-}
+//function mouseReleased() {
+	//if (is_dragging) is_dragging = false;
+//}

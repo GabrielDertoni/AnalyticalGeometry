@@ -18,6 +18,8 @@
  * GitHub: github.com/GabrielDertoni
  */
 
+const DEFAULT_COLOR = "rgba(254, 247, 49, 1)";
+
 let show_hitbox_checkbox;
 let draw_fixed_grid = true;
 let draw_fixed_grid_checkbox;
@@ -39,6 +41,8 @@ let right; // A unit vector that points right.
 
 let scl; // The size of the vectors in pixels. Size of a unit in pixels.
 
+let user_vectors = [] // List of user created vectors.
+
 function preload() {
 	font = loadFont('fonts/cmunti.otf');
 }
@@ -47,6 +51,7 @@ function setup() {
 	// Creates the html canvas on wich to draw all things.
 	createCanvas(windowWidth, windowHeight);
 
+	// Setup all of the html interactive inputs (slidesrs, checkboxes, etc).
 	draw_fixed_grid_checkbox = createCheckbox('Grid', draw_fixed_grid);
 	draw_fixed_grid_checkbox.changed(() => draw_fixed_grid = draw_fixed_grid_checkbox.checked());
 	draw_fixed_grid_checkbox.position(10, 10);
@@ -76,9 +81,10 @@ function setup() {
 	// Sets the scale variable. That is how many pixels a unit has.
 	scl = 80;
 
-	u = new UserVector(1, 0, color(133, 192, 104), "î");
-	v = new UserVector(0, 1, color(235, 92, 79), "ĵ");
-	vectr = new UserVector(1, 1, undefined, "v");
+	u = new UserVector(1, 0, "î", color(133, 192, 104), 5);
+	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5);
+
+	user_vectors.push(new UserVector(1, 1, "v", DEFAULT_COLOR, 3));
 }
 
 function draw() {
@@ -109,25 +115,37 @@ function draw() {
 	// Draw transformed grid.
 	strokeWeight(3.5);
 	stroke(63, 106, 115);
-	for (let i = 0; i < width / (scl * 2 / space_size); i++) {
+	for (let i = 1; i < width / (scl * 2 / space_size); i++) {
 		paralel_line_space(v, p5.Vector.mult(u, i * scl));
-		if (i != 0)
-			paralel_line_space(v, p5.Vector.mult(u, -i * scl));
+		paralel_line_space(v, p5.Vector.mult(u, -i * scl));
 	}
-	for (let i = 0; i < height / (scl * 2 / space_size); i++) {
+	for (let i = 1; i < height / (scl * 2 / space_size); i++) {
 		paralel_line_space(u, p5.Vector.mult(v, i * scl));
-		if (i != 0)
-			paralel_line_space(u, p5.Vector.mult(v, -i * scl));
+		paralel_line_space(u, p5.Vector.mult(v, -i * scl));
 	}
 
+	// Draw more strongly the lines that pass throgh the origin and are
+	// parelel to u and v.
 	strokeWeight(3.5);
 	stroke(150);
 	paralel_line_space(u, o);
 	paralel_line_space(v, o);
 
+	// Update the vectors.
+	for (let i = 0; i < user_vectors.length; i++)
+		user_vectors[i].update();
+	
+	u.update();
+	v.update();
+
+	// Draw the vectors.
 	u.draw();
 	v.draw();
-	vectr.draw();
 
-	vectr.set_basis(u, v);
+	for (let i = 0; i < user_vectors.length; i++)
+		user_vectors[i].draw();
+
+	// Update the basis vector of vectr.
+	for (let i = 0; i < user_vectors.length; i++)
+		user_vectors[i].set_basis(u, v);
 }
