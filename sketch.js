@@ -85,6 +85,8 @@ function setup() {
 	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5);
 
 	user_vectors.push(new UserVector(1, 1, "v", DEFAULT_COLOR, 3));
+
+	createUserVector(createVector(0, 1), createVector(1, 0), "w");
 }
 
 function draw() {
@@ -101,14 +103,14 @@ function draw() {
 		//stroke(70);
 		stroke(63, 106, 115, 100);
 		for (let x = 0; x <= width / 2; x += scl / 2) {
-			paralel_line(down, createVector(x, 0));
+			paralel_line(down, createVector(x, 0).add(o));
 			if (x != 0)
-				paralel_line(down, createVector(-x, 0));
+				paralel_line(down, createVector(-x, 0).add(o));
 		}
 		for (let y = 0; y <= height / 2; y += scl / 2) {
-			paralel_line(right, createVector(0, y));
+			paralel_line(right, createVector(0, y).add(o));
 			if (y != 0)
-				paralel_line(right, createVector(0, -y));
+				paralel_line(right, createVector(0, -y).add(o));
 		}
 	}
 
@@ -116,12 +118,12 @@ function draw() {
 	strokeWeight(3.5);
 	stroke(63, 106, 115);
 	for (let i = 1; i < width / (scl * 2 / space_size); i++) {
-		paralel_line_space(v, p5.Vector.mult(u, i * scl));
-		paralel_line_space(v, p5.Vector.mult(u, -i * scl));
+		paralel_line_space(v, p5.Vector.mult(u, i * scl).add(o));
+		paralel_line_space(v, p5.Vector.mult(u, -i * scl).add(o));
 	}
 	for (let i = 1; i < height / (scl * 2 / space_size); i++) {
-		paralel_line_space(u, p5.Vector.mult(v, i * scl));
-		paralel_line_space(u, p5.Vector.mult(v, -i * scl));
+		paralel_line_space(u, p5.Vector.mult(v, i * scl).add(o));
+		paralel_line_space(u, p5.Vector.mult(v, -i * scl).add(o));
 	}
 
 	// Draw more strongly the lines that pass throgh the origin and are
@@ -130,6 +132,8 @@ function draw() {
 	stroke(150);
 	paralel_line_space(u, o);
 	paralel_line_space(v, o);
+
+	translate(o.x, o.y);
 
 	// Update the vectors.
 	for (let i = 0; i < user_vectors.length; i++)
@@ -148,4 +152,12 @@ function draw() {
 	// Update the basis vector of vectr.
 	for (let i = 0; i < user_vectors.length; i++)
 		user_vectors[i].set_basis(u, v);
+
 }
+
+function createUserVector(origin, vector, label, clr, weight) {
+	let vec = new UserVector(vector.x, vector.y, label, clr, weight);
+	vec.set_origin(origin);
+	user_vectors.push(vec);
+}
+

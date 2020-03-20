@@ -2,25 +2,27 @@
  * This files contains a set of functions for drawing lines, arrows, etc.
  */
 
-function vector_arrow(vector, point, label, offset) {
+function vector_arrow(vector, point, label, offset, verbose=false) {
 	offset = offset !== undefined ? offset : 16;
 	let dest = p5.Vector.add(point, vector);
-	let end = p5.Vector.sub(dest, dest.copy().normalize().mult(offset * 0.5));
+	let end = p5.Vector.sub(vector, vector.copy().normalize().mult(offset * 0.5)).add(point);
 	line(point.x, point.y, end.x, end.y);
 
 	if (label !== undefined) {
-		let fsize = offset*2; // Font size
+		let fsize = offset * 2; // Font size
 		let toff = fsize * 0.8 - fsize * 0.4 * abs(down.dot(dest)) / dest.mag();
 		let perpendicular;
-		if (right.cross(dest).mag() < eps) perpendicular = createVector(dest.y / dest.x, -1).normalize().mult(toff);
-		else perpendicular = createVector(1, -dest.x / dest.y).normalize().mult(toff);
+		if (right.cross(vector).mag() < eps) perpendicular = createVector(vector.y / vector.x, -1).normalize().mult(toff);
+		else perpendicular = createVector(1, -vector.x / vector.y).normalize().mult(toff);
 
 		strokeWeight(1);
 		push();
 		if (Math.sign(perpendicular.y) > 0)
-			translate(dest.x / 2 + perpendicular.x, dest.y / 2 + perpendicular.y - fsize * 0.5);
+			translate(point.x + vector.x / 2 + perpendicular.x,
+					  point.y + vector.y / 2 + perpendicular.y - fsize * 0.5);
 		else
-			translate(dest.x / 2 + perpendicular.x, dest.y / 2 + perpendicular.y);
+			translate(point.x + vector.x / 2 + perpendicular.x,
+					  point.y + vector.y / 2 + perpendicular.y);
 
 		push();
 		scale(1, -1);
@@ -115,6 +117,5 @@ function line_intersection(v1, p1, v2, p2) {
 	}
 
 	let alpha = (v1.y * dx - v1.x * dy) / den;
-	//console.log(alpha);
 	return p5.Vector.add(p2, p5.Vector.mult(v2, alpha));
 }

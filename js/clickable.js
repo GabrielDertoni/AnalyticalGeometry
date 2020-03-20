@@ -48,16 +48,20 @@ class UserVector extends p5.Vector {
 
 		this.i = createVector(1, 0);
 		this.j = createVector(0, 1);
+		this.o = createVector(0, 0);
 	}
 	draw() {
 		strokeWeight(this.weight);
 		fill(this.color);
 		stroke(this.color);
+		push();
 		// Draw the transformed scaled (in pixels) vector with its origin in the global o = (0, 0) vector.
-		vector_arrow(this.tscl, o, this.label, this.tip_size);
+		vector_arrow(this.tscl, this.tsclo, this.label, this.tip_size);
+		pop();
 	}
 	update() {
 		push();
+		translate(this.tsclo.x, this.tsclo.y);
 		// Translates the clickable object to the tip of the vector.
 		// In this case its the starting position of the vector (in pixels)
 		// since this is the translation that always will need to be done,
@@ -104,20 +108,36 @@ class UserVector extends p5.Vector {
 		this.i = i;
 		this.j = j;
 	}
+	set_origin(o) {
+		this.o = o;
+	}
 
 	// The non transformed vector in pixels. Aka the vector in the u, v basis in pixels.
 	get scl() {
 		return p5.Vector.mult(this, scl);
+	}
+	// Get non transformed origin in pixels. Aka the origin in the u, v basis in pixels.
+	get sclo() {
+		return p5.Vector.mult(this.o, scl);
 	}
 	// Get the transformed vector in units.
 	get t() {
 		return createVector(this.x * this.i.x + this.y * this.j.x,
 							this.x * this.i.y + this.y * this.j.y);
 	}
+	// Get the transformed origin in units.
+	get to() {
+		return createVector(this.o.x * this.i.x + this.o.y * this.j.x,
+							this.o.x * this.i.y + this.o.y * this.j.y);
+	}
 	// The transformed vector in pixel values. In this case, its just exactly what is
 	// shown in the screen.
 	get tscl() {
 		return p5.Vector.mult(this.t, scl);
+	}
+	// The transformed origin in pixel values.
+	get tsclo() {
+		return p5.Vector.mult(this.to, scl);
 	}
 	// The vector that is actually beeing show on screen. Written in pixel values.
 	get screen() {
