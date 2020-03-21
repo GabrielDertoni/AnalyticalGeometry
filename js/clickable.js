@@ -25,14 +25,14 @@ let show_hitbox = false;
  * scl variable. Pixels are a fixed unit and have a direct relation to pixel size in html canvas.
  */
 class UserVector extends p5.Vector {
-	constructor(x, y, label, clr, weight) {
+	constructor(x, y, label, clr, weight, movable_origin=false) {
 		// The x, y values of the vector will always be written in the u, v basis and in units.
 		super(x, y, 0);
 		this.label = label !== undefined ? label : "";
 		// The color to use to display the vector.
 		this.color = clr !== undefined ? clr : color(254, 247, 49);
 		this.weight = weight !== undefined ? weight : 3;
-		this.tip_size = sqrt(this.weight * 77 / 6)*2; // Relation with the area of the tip.
+		this.tip_size = sqrt(this.weight * 77 / 6) * 2; // Relation with the area of the tip.
 		//this.tip_size = pow(this.weight * 310 / 3, 1/3) * 2; // Equation that looks preatty on screen.
 
 		// The starting position of the vector (in pixels);
@@ -45,6 +45,12 @@ class UserVector extends p5.Vector {
 
 		// The clickable object that allows the user to drag the vector.
 		this.clickable = new Clickable(shape);
+		this.movable_origin = movable_origin;
+		if (this.movable_origin)
+			this.clickable_origin = new Clickable(Shape.rect(0,
+															 -this.tip_size / 2,
+															 this.mag() * scl - this.tip_size * 1.5,
+															 this.tip_size));
 
 		this.i = createVector(1, 0);
 		this.j = createVector(0, 1);
@@ -54,14 +60,26 @@ class UserVector extends p5.Vector {
 		strokeWeight(this.weight);
 		fill(this.color);
 		stroke(this.color);
-		push();
 		// Draw the transformed scaled (in pixels) vector with its origin in the global o = (0, 0) vector.
 		vector_arrow(this.tscl, this.tsclo, this.label, this.tip_size);
-		pop();
 	}
+
 	update() {
+		let angle = atan2(this.tscl.y, this.tscl.x);
+
 		push();
 		translate(this.tsclo.x, this.tsclo.y);
+
+		if (this.clickable_origin) {
+			if (is_dragging && !this.clickable_origin.drag) {
+				this.clickable_origin.bounding_box = Shape.rect(0, -this.tip_size / 2,
+																max(this.tscl.mag() - this.tip_size * 1.5, 0),
+																this.tip_size);
+				this.clickable_origin.bounding_box.rotate_to(angle);
+			}
+			this.clickable_origin.update();
+		}
+
 		// Translates the clickable object to the tip of the vector.
 		// In this case its the starting position of the vector (in pixels)
 		// since this is the translation that always will need to be done,
@@ -71,7 +89,6 @@ class UserVector extends p5.Vector {
 		translate(this.start.x, this.start.y);
 
 		// Rotates the bounding box to match the arrow of the vector.
-		let angle = atan2(this.tscl.y, this.tscl.x);
 		this.clickable.bounding_box.rotate_to(angle);
 
 		// Updates the clickable object.
@@ -93,6 +110,14 @@ class UserVector extends p5.Vector {
 			this.x = inverted.x;
 			this.y = inverted.y;
 		}
+
+		if (this.clickable_origin) {
+			if (this.clickable_origin.drag) {
+				let inverted = this.get_invto();
+				this.o.x = inverted.x;
+				this.o.y = inverted.y;
+			}
+		}
 	}
 	// The vector in the u, v basis in units. To get this vector, get_invt() multiplies the
 	// vector shown in screen written in units by the inverse of the transformation matrix.
@@ -100,6 +125,14 @@ class UserVector extends p5.Vector {
 		// Determinant of the transformation matrix, used to calculate the inverse matrix.
 		let det = this.i.x * this.j.y - this.i.y * this.j.x;
 		let tvec = this.screen.div(scl);
+		// The resulting vector from the inverse matrix multiplied by the vector.
+		return createVector(tvec.x *  this.j.y / det + tvec.y * -this.j.x / det,
+							tvec.x * -this.i.y / det + tvec.y *  this.i.x / det);
+	}
+	get_invto() {
+		// Determinant of the transformation matrix, used to calculate the inverse matrix.
+		let det = this.i.x * this.j.y - this.i.y * this.j.x;
+		let tvec = this.screen_origin.div(scl);
 		// The resulting vector from the inverse matrix multiplied by the vector.
 		return createVector(tvec.x *  this.j.y / det + tvec.y * -this.j.x / det,
 							tvec.x * -this.i.y / det + tvec.y *  this.i.x / det);
@@ -143,7 +176,9 @@ class UserVector extends p5.Vector {
 	get screen() {
 		return p5.Vector.add(this.start, this.clickable.drag_offset);
 	}
-
+	get screen_origin() {
+		return p5.Vector.add(this.tsclo, this.clickable_origin.drag_offset);
+	}
 }
 
 /*

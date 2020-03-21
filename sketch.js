@@ -25,6 +25,10 @@ let draw_fixed_grid = true;
 let draw_fixed_grid_checkbox;
 let space_size;
 let space_size_slider;
+let add_vector = false;
+let add_vector_checkbox;
+
+let mouse_over_group;
 
 let font;
 
@@ -54,17 +58,32 @@ function setup() {
 	// Setup all of the html interactive inputs (slidesrs, checkboxes, etc).
 	draw_fixed_grid_checkbox = createCheckbox('Grid', draw_fixed_grid);
 	draw_fixed_grid_checkbox.changed(() => draw_fixed_grid = draw_fixed_grid_checkbox.checked());
-	draw_fixed_grid_checkbox.position(10, 10);
+	//draw_fixed_grid_checkbox.position(10, 10);
 	show_hitbox_checkbox = createCheckbox('Hitbox', show_hitbox);
 	show_hitbox_checkbox.changed(() => show_hitbox = show_hitbox_checkbox.checked());
-	show_hitbox_checkbox.position(10, 35);
+	//show_hitbox_checkbox.position(10, 35);
 	space_size_slider = createSlider(1, 10, 2, 0);
 	space_size_slider.style('width', '80px');
-	let lbl = createElement('label', 'Space size')
-	let div = createDiv();
-	space_size_slider.parent(div);
-	lbl.parent(div);
-	div.position(10, 65);
+	let space_size_slider_lbl = createElement('label', 'Space size')
+	let space_size_slider_div = createDiv();
+	space_size_slider.parent(space_size_slider_div);
+	space_size_slider_lbl.parent(space_size_slider_div);
+	//div.position(10, 65);
+	add_vector_checkbox = createCheckbox('Add vector', add_vector);
+	add_vector_checkbox.changed(() => add_vector = add_vector_checkbox.checked());
+
+	let group = createElement('ol');
+	let list_items = [draw_fixed_grid_checkbox, show_hitbox_checkbox, space_size_slider_div,
+					  add_vector_checkbox];
+
+	for (let i = 0; i < list_items.length; i++) {
+		let li = createElement('li');
+		list_items[i].parent(li);
+		li.parent(group);
+	}
+	group.position(10, 10);
+	group.mouseOver(() => mouse_over_group = true);
+	group.mouseOut(() => mouse_over_group = false);
 
 	textFont(font);
 
@@ -152,12 +171,20 @@ function draw() {
 	// Update the basis vector of vectr.
 	for (let i = 0; i < user_vectors.length; i++)
 		user_vectors[i].set_basis(u, v);
+}
 
+function mousePressed() {
+	if (add_vector && !is_dragging && !mouse_over_group) {
+		let vec = createUserVector(transform_mouse().div(scl), createVector(1, 0), "u", color(255), 3);
+		vec.clickable.drag = true;
+		is_dragging = true;
+	}
 }
 
 function createUserVector(origin, vector, label, clr, weight) {
-	let vec = new UserVector(vector.x, vector.y, label, clr, weight);
+	let vec = new UserVector(vector.x, vector.y, label, clr, weight, true);
 	vec.set_origin(origin);
 	user_vectors.push(vec);
+	return vec;
 }
 
