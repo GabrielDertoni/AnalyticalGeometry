@@ -234,7 +234,7 @@ class Clickable {
 				this.offset = p5.Vector.add(this.offset, mouse);
 				this.mouse_offset = createVector(0, 0);
 				this.drag = false;
-				is_dragging = false;
+				// is_dragging = false;
 				this.mouse_drag = createVector(0, 0);
 			}
 		}
