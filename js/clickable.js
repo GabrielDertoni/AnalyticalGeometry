@@ -75,8 +75,8 @@ class UserVector extends p5.Vector {
 				this.clickable_origin.bounding_box = Shape.rect(0, -this.tip_size / 2,
 																max(this.tscl.mag() - this.tip_size * 1.5, 0),
 																this.tip_size);
-				this.clickable_origin.bounding_box.rotate_to(angle);
 			}
+			this.clickable_origin.bounding_box.rotate_to(angle);
 			this.clickable_origin.update();
 		}
 

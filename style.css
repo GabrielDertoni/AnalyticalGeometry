@@ -6,7 +6,7 @@ body {
 	margin: 0;
 	color: white;
 	background-color: black;
-	font-family: "Computer Modern";
+  font-family: "Computer Modern";
 }
 label {
 	font-size: 1.5em;
@@ -15,4 +15,14 @@ label {
 ol {
 	padding: 0;
 	list-style: none;
+}
+button {
+  background-color: #0075ff;
+  border: none;
+  color: white;
+  font-family: "Computer Modern";
+	font-size: 1.2em;
+	letter-spacing: 1.2px;
+  padding: 0.333em;
+  margin-bottom: 0.3em;
 }

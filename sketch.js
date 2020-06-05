@@ -60,6 +60,8 @@ let scl; // The size of the vectors in pixels. Size of a unit in pixels.
 
 let user_vectors = [] // List of user created vectors.
 
+let draw_after = [];
+
 function preload() {
 	font = loadFont('fonts/cmunti.otf');
 }
@@ -71,34 +73,68 @@ function setup() {
 	// Setup all of the html interactive inputs (slidesrs, checkboxes, etc).
 	draw_fixed_grid_checkbox = createCheckbox('Grid', draw_fixed_grid);
 	draw_fixed_grid_checkbox.changed(() => draw_fixed_grid = draw_fixed_grid_checkbox.checked());
-	//draw_fixed_grid_checkbox.position(10, 10);
+	
 	show_hitbox_checkbox = createCheckbox('Hitbox', show_hitbox);
 	show_hitbox_checkbox.changed(() => show_hitbox = show_hitbox_checkbox.checked());
-	//show_hitbox_checkbox.position(10, 35);
+	
 	space_size_slider = createSlider(1, 10, 2, 0);
 	space_size_slider.style('width', '80px');
-	let space_size_slider_lbl = createElement('label', 'Space size')
-	let space_size_slider_div = createDiv();
-	space_size_slider.parent(space_size_slider_div);
-	space_size_slider_lbl.parent(space_size_slider_div);
 	//div.position(10, 65);
 	add_vector_checkbox = createCheckbox('Add vector', add_vector);
 	add_vector_checkbox.changed(() => add_vector = add_vector_checkbox.checked());
 
 	rotation_slider = createSlider(0, 360, 0, 0);
 	rotation_slider.style('width', '180px');
-	let rotation_slider_lbl = createElement('label', 'Rotation');
-	let rotation_slider_div = createDiv();
-	rotation_slider.parent(rotation_slider_div);
-	rotation_slider_lbl.parent(rotation_slider_div);
+  
+	a_slider = createSlider(-5, 5, 4, 0);
+  	a_slider.style('width', '180px');
 
-	let group = createElement('ol');
+  	b_slider = createSlider(-5, 5, -4, 0);
+	b_slider.style('width', '180px');
+  
+ 	c_slider = createSlider(-10, 10, 7, 0);
+	c_slider.style('width', '180px');
+  
+ 	d_slider = createSlider(-20, 20, 12, 0);
+	d_slider.style('width', '180px');
+  
+	e_slider = createSlider(-10, 10, 6, 0);
+	e_slider.style('width', '180px');
+  
+	f_slider = createSlider(-12, 12, -9, 0);
+	f_slider.style('width', '180px');
+
+	solve_btn = createButton("Resolver");
+	solve_btn.mouseClicked(() => {
+		rotation_from = rotation;
+		rotation_to = g.rotation;
+		origin_from = o.copy();
+		origin_to = g.center;
+		is_playing = true;
+	});
+
+	attatch_btn = createButton("Usar como base");
+	attatch_btn.mouseClicked(() => {
+		g.set_basis(u, v);
+		g.set_origin(o);
+	})
+
+  // let group = createElement('ol');
+  let group = new p5.Element(document.getElementById("controls"));
 	let list_items = [
 		draw_fixed_grid_checkbox,
 		show_hitbox_checkbox,
-		space_size_slider_div,
+		wrapDiv(space_size_slider, label("Space size")),
 		add_vector_checkbox,
-		rotation_slider_div
+		wrapDiv(rotation_slider, label("Rotation")),
+		wrapDiv(a_slider, label("a")),
+		wrapDiv(b_slider, label("b")),
+		wrapDiv(c_slider, label("c")),
+		wrapDiv(d_slider, label("d")),
+		wrapDiv(e_slider, label("e")),
+		wrapDiv(f_slider, label("f")),
+		wrapDiv(solve_btn),
+		wrapDiv(attatch_btn)
 	];
 
 	for (let i = 0; i < list_items.length; i++) {
@@ -135,18 +171,29 @@ function setup() {
 
 	u = new UserVector(1, 0, "î", color(133, 192, 104), 5);
 	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5);
+	
+	// createUserVector(createVector(0, 0), createVector(1, 1), "w", color(255), 2);
 
-	user_vectors.push(new UserVector(1, 1, "v", DEFAULT_COLOR, 3));
-
-  createUserVector(createVector(0, 1), createVector(1, 0), "w");
-  
-
-  g = new Locus(4, -4, 7, 12, 6, -9);
+	g = new Locus(4, -4, 7, 12, 6, -9);
 }
 
 function draw() {
+  if (abs(g.a - a_slider.value()) > eps ||
+  	  abs(g.b - b_slider.value()) > eps ||
+  	  abs(g.c - c_slider.value()) > eps ||
+  	  abs(g.d - d_slider.value()) > eps ||
+  	  abs(g.e - e_slider.value()) > eps ||
+  	  abs(g.f - f_slider.value()) > eps) {
+	g.a = a_slider.value();
+	g.b = b_slider.value();
+	g.c = c_slider.value();
+	g.d = d_slider.value();
+	g.e = e_slider.value();
+	g.f = f_slider.value();
+    g.recalculate();
+  }
 	// Update the slider values.
-  space_size = space_size_slider.value();
+	space_size = space_size_slider.value();
 
 	if (!is_playing) {
 		const val = map(rotation_slider.value(), 0, 360, 0, TWO_PI);
@@ -159,9 +206,8 @@ function draw() {
 	} else {
 		const val = rotation_from + (rotation_to - rotation_from) * anim_prog
 		rotation_slider.value(map(val, 0, TWO_PI, 0, 360));
-		const new_origin = p5.Vector.add(origin_from, p5.Vector.sub(origin_to, origin_from).mult(anim_prog));
-		o.set(new_origin);
-		clickable_origin.drag_offset = scaled(new_origin);
+		o.set(p5.Vector.lerp(origin_from, origin_to, anim_prog));
+		clickable_origin.drag_offset = scaled(o);
 		anim_prog += anim_step;
 		
 		u.rotate(val - rotation);
@@ -173,6 +219,7 @@ function draw() {
 	}
 
 	background(0);
+
 	translate(width/2, height/2);
 	scale(1, -1); // Invert the y coordinates so the + direction is upwards.
 
@@ -216,9 +263,14 @@ function draw() {
 		clickable_origin.update();
 		o.set(unscaled(clickable_origin.drag_offset));
 	}
+  
+	noFill();
+	stroke(DEFAULT_COLOR);
+	strokeWeight(2);
+	g.draw();
 
-  push();
-  translate(scaled(o).x, scaled(o).y);
+	push();
+	translate(scaled(o).x, scaled(o).y);
 
 	// Update the vectors.
 	for (let i = 0; i < user_vectors.length; i++)
@@ -233,15 +285,8 @@ function draw() {
 
 	for (let i = 0; i < user_vectors.length; i++)
 		user_vectors[i].draw();
-
-	// Update the basis vector of vectr.
-	for (let i = 0; i < user_vectors.length; i++)
-		user_vectors[i].set_basis(u, v);
-  
-  pop();
-  noFill();
-  stroke(255);
-  g.draw();
+	
+	pop();
 }
 
 function mousePressed() {
@@ -259,6 +304,7 @@ function mouseReleased() {
 function createUserVector(origin, vector, label, clr, weight) {
 	let vec = new UserVector(vector.x, vector.y, label, clr, weight, true);
 	vec.set_origin(origin);
+	vec.set_basis(u, v);
 	user_vectors.push(vec);
 	return vec;
 }
