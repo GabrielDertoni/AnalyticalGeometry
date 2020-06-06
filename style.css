@@ -26,3 +26,10 @@ button {
   padding: 0.333em;
   margin-bottom: 0.3em;
 }
+
+#equation {
+  position: absolute;
+  font-size: 2em;
+  right: 1em;
+  top: 0;
+}

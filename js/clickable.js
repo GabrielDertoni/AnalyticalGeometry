@@ -296,12 +296,10 @@ class Shape {
 		this.rotation = 0;
 	}
 	hover() {
-		let right = createVector(1, 0);
 		let mouse = transform_mouse();
 		let count = 0;
 		for (let i = 0; i < this.vertices.length; i++) {
 			let next = (i + 1) % this.vertices.length;
-			let vec = p5.Vector.sub(this.vertices[next], this.vertices[i]);
 			if (min(this.vertices[i].y, this.vertices[next].y) < mouse.y &&
 				max(this.vertices[i].y, this.vertices[next].y) > mouse.y) {
 				let slope = (this.vertices[next].x - this.vertices[i].x) / (this.vertices[next].y - this.vertices[i].y);
@@ -334,13 +332,3 @@ class Shape {
 		this.rotation = ang;
 	}
 }
-
-// Function that is called whenever the mouse is beeing dragged. Its called by p5.js
-// This is ment to prevento one from dragging the mouse arround and "grabing" the clickables.
-//function mouseDragged() {
-	//if (!is_dragging) is_dragging = true;
-//}
-// Function resets the is_dragging variable.
-//function mouseReleased() {
-	//if (is_dragging) is_dragging = false;
-//}

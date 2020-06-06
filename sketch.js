@@ -20,6 +20,9 @@
 
 const DEFAULT_COLOR = "rgba(254, 247, 49, 1)";
 
+let screenCenter;
+let screenBasis;
+
 let show_hitbox_checkbox;
 let draw_fixed_grid = true;
 let draw_fixed_grid_checkbox;
@@ -60,7 +63,7 @@ let scl; // The size of the vectors in pixels. Size of a unit in pixels.
 
 let user_vectors = [] // List of user created vectors.
 
-let draw_after = [];
+let equation_text;
 
 function preload() {
 	font = loadFont('fonts/cmunti.otf');
@@ -69,6 +72,9 @@ function preload() {
 function setup() {
 	// Creates the html canvas on wich to draw all things.
 	createCanvas(windowWidth, windowHeight);
+
+	screenCenter = createVector(0, 0);
+	screenBasis = new Basis(cretaeVector(1, 0), createVector(0, 1));
 
 	// Setup all of the html interactive inputs (slidesrs, checkboxes, etc).
 	draw_fixed_grid_checkbox = createCheckbox('Grid', draw_fixed_grid);
@@ -87,12 +93,12 @@ function setup() {
 	rotation_slider.style('width', '180px');
   
 	a_slider = createSlider(-5, 5, 4, 0);
-  	a_slider.style('width', '180px');
+	a_slider.style('width', '180px');
 
-  	b_slider = createSlider(-5, 5, -4, 0);
+	b_slider = createSlider(-5, 5, -4, 0);
 	b_slider.style('width', '180px');
-  
- 	c_slider = createSlider(-10, 10, 7, 0);
+
+	c_slider = createSlider(-10, 10, 7, 0);
 	c_slider.style('width', '180px');
   
  	d_slider = createSlider(-20, 20, 12, 0);
@@ -146,6 +152,8 @@ function setup() {
 	group.mouseOver(() => mouse_over_group = true);
 	group.mouseOut(() => mouse_over_group = false);
 
+	equation_text = new p5.Element(document.getElementById("equation"));
+
 	textFont(font);
 
 	// Assigns values to all variables set as global and not initialized.
@@ -169,8 +177,8 @@ function setup() {
 	rotation_from = 0;
 	rotation_to = PI / 6;
 
-	u = new UserVector(1, 0, "î", color(133, 192, 104), 5);
-	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5);
+	u = new UserVector(1, 0, "î", color(133, 192, 104), 5, false);
+	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5, false);
 	
 	// createUserVector(createVector(0, 0), createVector(1, 1), "w", color(255), 2);
 
@@ -178,20 +186,21 @@ function setup() {
 }
 
 function draw() {
-  if (abs(g.a - a_slider.value()) > eps ||
-  	  abs(g.b - b_slider.value()) > eps ||
-  	  abs(g.c - c_slider.value()) > eps ||
-  	  abs(g.d - d_slider.value()) > eps ||
-  	  abs(g.e - e_slider.value()) > eps ||
-  	  abs(g.f - f_slider.value()) > eps) {
+	equation_text.elt.textContent = g.toString();
+	if (abs(g.a - a_slider.value()) > eps ||
+		abs(g.b - b_slider.value()) > eps ||
+		abs(g.c - c_slider.value()) > eps ||
+		abs(g.d - d_slider.value()) > eps ||
+		abs(g.e - e_slider.value()) > eps ||
+		abs(g.f - f_slider.value()) > eps) {
 	g.a = a_slider.value();
 	g.b = b_slider.value();
 	g.c = c_slider.value();
 	g.d = d_slider.value();
 	g.e = e_slider.value();
 	g.f = f_slider.value();
-    g.recalculate();
-  }
+	g.recalculate();
+	}
 	// Update the slider values.
 	space_size = space_size_slider.value();
 

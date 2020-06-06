@@ -12,6 +12,7 @@ class Locus {
 		this.i = createVector(1, 0);
 		this.j = createVector(0, 1);
 		this.o = createVector(0, 0);
+		this.coord_sys = new CoordinateSystem(screenCenter, screenBasis)
 		this.recalculate();
 	}
 	recalculate() {
@@ -56,13 +57,15 @@ class Locus {
 				}
 			}
 		} else if (translation == INDETERMINATE_SYSTEM) {
-			// throw new Error("Infinite translations are possible.");
+			throw new Error("Infinite translations are possible.");
 		} else {
 			this.center = createVector(translation[0], translation[1]);
 			this.new_f = this.d / 2 * this.center.x + this.e / 2 * this.center.y + this.f;
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
-
 		}
+	}
+	toString() {
+		return `${g.a.toFixed(2)}x² + ${g.b.toFixed(2)}xy + ${g.c.toFixed(2)}y² + ${g.d.toFixed(2)}x + ${g.e.toFixed(2)}y + ${g.f.toFixed(2)}`;
 	}
 	solve_vertex = (a, b, c) => [-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)];
 	solve_translation() {
@@ -94,7 +97,6 @@ class Locus {
 			);
 			return result.concat(rotation);
 		}
-
 	}
 	set_basis(i, j) {
 		this.i = i;
@@ -187,27 +189,6 @@ class Locus {
 							 this.localTransformationMatrix);
 	}
 	get scenter() { return scaled(this.center); }
-	/*
-	plst
-   [[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]
-	[ x, y ]]
-
-	plst transposta
-	[[x, x, x, x, x, x, x, x]
-	 [y, y, y, y, y, y, y, y]]
-
-	[[cos(t), -sen(t)]   *  [[x, x, x, x, x, x, x, x]
-	 [sen(t),  cos(t)]]		 [y, y, y, y, y, y, y, y]]
-	*/
 	retransform(plst) {
 		plst = math.concat(plst, math.ones([plst.length, 1]), 1);
 		return math.transpose( // Transpose list of points to original shape
