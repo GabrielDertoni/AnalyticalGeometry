@@ -1,54 +1,63 @@
-class Basis {
-	constructor(u, v) {
-		this.u = u;
-		this.v = v;
-	}
-	get changeMatrix() {
-		return math.matrix(
-			[[this.u.x, this.u.y],
-			 [this.v.x, this.v.y]]
-		);
-	}
-	get invChangeMatrix() { return math.inv(this.changeMatrix); }
+class Basis extends math.DenseMatrix {
+  static screen = math.identity(2);
+	constructor(vecs) {
+		super(vecs)
+		if (math.det(this) == 0)
+			console.warn("Bases can't have linearly dependent vectors.");
+		
+		if (this.size()[0] != this.size()[1])
+			throw new Error("Dimention missmatch, basis matrix must be square.");
+  }
+  get i() {
+    return this.subset(math.index(math.range(0, this.size()[1]), 0)).reshape([this.size()[1]]);
+  }
+  get j() {
+    return this.subset(math.index(math.range(0, this.size()[1]), 1)).reshape([this.size()[1]]);
+  }
 }
 
-class CoordinateSystem {
+class CoordinateSystem extends math.DenseMatrix {
 	constructor(origin, basis) {
+		let mat = math.concat(basis, origin.reshape([basis.size()[0], 1]), 1);
+		mat = math.concat(mat, math.zeros([1, mat.size()[1]]), 0)
+		mat = math.subset(mat, math.index(mat.size()[0]-1, mat.size()[1]-1), 1);
+		super(mat);
 		this.origin = origin;
 		this.basis = basis;
 	}
-	get transformationMatrix() {
-		return math.matrix(
-			[[this.basis.u.x, this.basis.v.x, this.origin.x],
-			 [this.basis.u.y, this.basis.u.y, this.origin.y],
-			 [     0        ,      0        ,      1       ]]
-		);
-	}
-	get invTransformationMatrix() { return math.inv(this.transformationMatrix); }
 }
 
-class Vector {
-	static fromArray(vec, basis) {
-		return new Vector(vec, basis);
-	}
-	constructor(x, y, basis) {
-		this.vec = [x, y];
+class Vector extends math.DenseMatrix {
+  static vec2d(x, y, basis) {
+    return new Vector([x, y], basis);
+  }
+	constructor(vec, basis) {
+		super(vec);
+		
 		if (basis) this.basis = basis;
-		else this.basis = screenBasis;
+		else this.basis = Basis.screen;
 	}
+	get x() { return this._data[0]; }
+	get y() { return this._data[1]; }
+	get z() { return this._data[2]; }
+	get w() { return this._data[3]; }
+	set x(val) { this._data[0] = val; }
+	set y(val) { this._data[1] = val; }
+	set z(val) { this._data[2] = val; }
+	set w(val) { this._data[3] = val; }
 	transform(basis) {
 		const res = math.multiply(
 			basis.changeMatrix,
-			this.vec
+			this
 		);
 		return new Vector(res, basis);
 	}
 	invTransform(basis) {
 		const res = math.multiply(
 			basis.invChangeMatrix,
-			[this.x, this.y]
+			this.vec
 		);
-		return new Vector(res, basis)
+		return new Vector(res, Basis.fromMatrix(invChangeMatrix))
 	}
 }
 

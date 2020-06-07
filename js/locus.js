@@ -1,7 +1,7 @@
 const IMPOSSIBLE_SYSTEM = null;
 const INDETERMINATE_SYSTEM = NaN;
 
-class Locus {
+class Conic {
 	constructor(a, b, c, d, e, f) {
 		this.a = a;
 		this.b = b;
@@ -12,7 +12,6 @@ class Locus {
 		this.i = createVector(1, 0);
 		this.j = createVector(0, 1);
 		this.o = createVector(0, 0);
-		this.coord_sys = new CoordinateSystem(screenCenter, screenBasis)
 		this.recalculate();
 	}
 	recalculate() {
