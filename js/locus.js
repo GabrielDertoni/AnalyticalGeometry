@@ -65,7 +65,19 @@ class Locus {
 		}
 	}
 	toString() {
-		return `${g.a.toFixed(2)}x² + ${g.b.toFixed(2)}xy + ${g.c.toFixed(2)}y² + ${g.d.toFixed(2)}x + ${g.e.toFixed(2)}y + ${g.f.toFixed(2)}`;
+		var toPrint = [[g.a,g.b, g.c,g.d,g.e,g.f],
+						[`x²`,`xy`,`y²`,`x`,`y`,``]];
+		var first = true;
+		for(var i = 0; i < 6; i++){
+			toPrint[0][i] = (toPrint[0][i]<0)? " - " + toPrint[0][i].toFixed(2).substring(1):
+																 (toPrint[0][i]!=0)?((first)?"": " + ")+ toPrint[0][i].toFixed(2):"";
+			first = (first && toPrint[0][i] == 0);
+			if(toPrint[0][i] == ""){
+				toPrint[1][i] = "";
+			}
+		}
+
+		return `${toPrint[0][0]} ${toPrint[1][0]}${toPrint[0][1]} ${toPrint[1][1]}${toPrint[0][2]} ${toPrint[1][2]}${toPrint[0][3]} ${toPrint[1][3]}${toPrint[0][4]} ${toPrint[1][4]}${toPrint[0][5]}`;
 	}
 	solve_vertex = (a, b, c) => [-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)];
 	solve_translation() {
