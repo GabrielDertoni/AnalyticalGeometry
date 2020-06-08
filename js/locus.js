@@ -9,9 +9,10 @@ class Conic {
 		this.d = d;
 		this.e = e;
 		this.f = f;
-		this.i = createVector(1, 0);
-		this.j = createVector(0, 1);
-		this.o = createVector(0, 0);
+		// this.i = createVector(1, 0);
+		// this.j = createVector(0, 1);
+		// this.o = createVector(0, 0);
+		this.coord_sys = new CoordinateSystem(Vector.screenOrigin, Basis.screen);
 		this.recalculate();
 	}
 	recalculate() {
@@ -21,20 +22,13 @@ class Conic {
 			 [this.d / 2, this.e / 2, this.f    ]]
 		);
 		const check = this.b * this.b - 4 * this.a * this.c;
-		if (check < 0) {
-			// console.log("Elíptico");
-			this.type = "eliptical";
-		} else if (check > 0) {
-			// console.log("Hiperbólico");
-			this.type = "hyperbolical";
-		} else {
-			// console.log("Parabólico");
-			this.type = "parabolical";
-		}
+		if (check < 0) this.type = "eliptical";
+		else if (check > 0) this.type = "hyperbolical";
+		else this.type = "parabolical";
+		
 		const translation = this.solve_translation();
 
 		if (translation == IMPOSSIBLE_SYSTEM) {
-			// throw new Error("Impossible to translate!");
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
 			const new_d =  this.d * cos(this.rotation) + this.e * sin(this.rotation);
 			const new_e = -this.d * sin(this.rotation) + this.e * cos(this.rotation);
@@ -58,13 +52,14 @@ class Conic {
 		} else if (translation == INDETERMINATE_SYSTEM) {
 			throw new Error("Infinite translations are possible.");
 		} else {
-			this.center = createVector(translation[0], translation[1]);
-			this.new_f = this.d / 2 * this.center.x + this.e / 2 * this.center.y + this.f;
-			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
+			this.new_f = this.d / 2 * translation.x + this.e / 2 * translation.y + this.f;
+			let rotation;
+			[this.new_a, this.new_c, rotation] = this.solve_rotation();
+			this.new_coord_sys = new CoordinateSystem(translation, Basis.fromAngle(rotation));
 		}
 	}
 	toString() {
-		return `${g.a.toFixed(2)}x² + ${g.b.toFixed(2)}xy + ${g.c.toFixed(2)}y² + ${g.d.toFixed(2)}x + ${g.e.toFixed(2)}y + ${g.f.toFixed(2)}`;
+		return `${this.a.toFixed(2)}x² + ${this.b.toFixed(2)}xy + ${this.c.toFixed(2)}y² + ${this.d.toFixed(2)}x + ${this.e.toFixed(2)}y + ${this.f.toFixed(2)}`;
 	}
 	solve_vertex = (a, b, c) => [-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)];
 	solve_translation() {
@@ -72,7 +67,7 @@ class Conic {
 		// Solve translation.
 		// The vector representing what each line of the system equals to [-d / 2, -e / 2]
 		const equals = math.multiply(-1, this.mat.subset(math.index([0, 1], 2)));
-		return solveLinear(submatrix, equals);
+		return new Vector(solveLinear(submatrix, equals));
 	}
 	solve_rotation() {
 		// Solve rotation.
@@ -97,13 +92,7 @@ class Conic {
 			return result.concat(rotation);
 		}
 	}
-	set_basis(i, j) {
-		this.i = i;
-		this.j = j;
-	}
-	set_origin(o) {
-		this.o = o;
-	}
+	set_coordinate_system(coord_sys) { this.coord_sys = coord_sys; }
 	sampleY(x) {
 		if (this.type === "parabolical") {
 			if (this.new_a != 0) {
@@ -172,27 +161,16 @@ class Conic {
 		}
 		return [plst1, plst2];
 	}
-	get localTransformationMatrix() {
-		return math.matrix([[ cos(this.rotation), -sin(this.rotation), this.scenter.x],
-							[ sin(this.rotation),  cos(this.rotation), this.scenter.y],
-							[          0        ,           0        ,      1       ]]);
-	}
-	// Transformation matrix in order to transform according to some basis.
-	get spaceTransformationMatrix() {
-		return math.matrix([[this.i.x, this.j.x, scaled(this.o.x)],
-							[this.i.y, this.j.y, scaled(this.o.y)],
-							[     0  ,      0  ,      1          ]]);
-	}
 	get transformationMatrix() {
-		return math.multiply(this.spaceTransformationMatrix,
-							 this.localTransformationMatrix);
+		return math.multiply(this.coord_sys,
+							 this.new_coord_sys);
 	}
 	get scenter() { return scaled(this.center); }
 	retransform(plst) {
 		plst = math.concat(plst, math.ones([plst.length, 1]), 1);
 		return math.transpose( // Transpose list of points to original shape
 			math.multiply( // Apply the rotatin matrix to all points
-				this.localTransformationMatrix,
+				this.new_coord_sys,
 				math.transpose(plst) // Transpose the list of points for dot product.
 			)
 		).toArray();
@@ -213,7 +191,7 @@ class Conic {
 		applyMatrix(
 			mat[0][0], mat[1][0],
 			mat[0][1], mat[1][1],
-			mat[0][2], mat[1][2],
+			scaled(mat[0][2]), scaled(mat[1][2]),
 		);
 	}
 	draw() {

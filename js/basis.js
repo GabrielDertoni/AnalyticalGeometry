@@ -1,5 +1,11 @@
 class Basis extends math.DenseMatrix {
   static screen = math.identity(2);
+	static fromAngle(ang) {
+		return new Basis(
+			[[cos(ang), -sin(ang)],
+			 [sin(ang),  cos(ang)]]
+		);
+	}
 	constructor(vecs) {
 		super(vecs)
 		if (math.det(this) == 0)
@@ -28,6 +34,7 @@ class CoordinateSystem extends math.DenseMatrix {
 }
 
 class Vector extends math.DenseMatrix {
+  static screenOrigin = math.matrix([0, 0]);
   static vec2d(x, y, basis) {
     return new Vector([x, y], basis);
   }
