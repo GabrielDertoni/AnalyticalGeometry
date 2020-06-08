@@ -1,5 +1,5 @@
 const IMPOSSIBLE_SYSTEM = null;
-const INDETERMINATE_SYSTEM = NaN;
+const INDETERMINATE_SYSTEM = "indeterminate";
 
 class Conic {
 	constructor(a, b, c, d, e, f) {
@@ -9,10 +9,10 @@ class Conic {
 		this.d = d;
 		this.e = e;
 		this.f = f;
-		// this.i = createVector(1, 0);
-		// this.j = createVector(0, 1);
-		// this.o = createVector(0, 0);
-		this.coord_sys = new CoordinateSystem(Vector.screenOrigin, Basis.screen);
+		// this.coord_sys = new CoordinateSystem(Vector.screenOrigin, Basis.screen);
+		this.is_playing = false;
+		this.coord_sys_from;
+		this.coord_sys_to;
 		this.recalculate();
 	}
 	recalculate() {
@@ -27,12 +27,10 @@ class Conic {
 		else this.type = "parabolical";
 		
 		const translation = this.solve_translation();
-
-		if (translation == IMPOSSIBLE_SYSTEM) {
+		if (translation === IMPOSSIBLE_SYSTEM) {
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
 			const new_d =  this.d * cos(this.rotation) + this.e * sin(this.rotation);
 			const new_e = -this.d * sin(this.rotation) + this.e * cos(this.rotation);
-			console.log(this.new_a, 0, this.new_c, new_d, new_e, this.f);
 			if (new_d != 0 || new_e != 0) {
 				// Retry to solve translation.
 				if (this.new_a == 0) {
@@ -49,26 +47,28 @@ class Conic {
 					this.new_d = 0;
 				}
 			}
-		} else if (translation == INDETERMINATE_SYSTEM) {
+		} else if (translation === INDETERMINATE_SYSTEM) {
 			throw new Error("Infinite translations are possible.");
 		} else {
 			this.new_f = this.d / 2 * translation.x + this.e / 2 * translation.y + this.f;
-			let rotation;
-			[this.new_a, this.new_c, rotation] = this.solve_rotation();
-			this.new_coord_sys = new CoordinateSystem(translation, Basis.fromAngle(rotation));
+			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
+			this.coord_sys = new CoordinateSystem(translation, Basis.fromAngle(this.rotation));
 		}
 	}
-	toString() {
+	toString(decimals) {
 		let variables = [this.a, this.b, this.c, this.d, this.e, this.f];
 		let names = ['x²', 'xy', 'y²', 'x', 'y', ''];
 		let str = "";
 		for (let i = 0; i < variables.length; i++) {
-			if (variables[i] > 0 && str.length > 0) str += " + ";
-			else if (variables[i] < 0)
-				if (str.length > 0) str += " - ";
-				else str += "-";
-			
-			if (round(variables[i], 2) != 0) str += abs(variables[i]).toFixed(2) + names[i];
+			if (abs(variables[i]) > 0.01) {
+				if (variables[i] > 0 && str.length > 0) str += " + ";
+				else if (variables[i] < 0)
+					if (str.length > 0) str += " - ";
+					else str += "-";
+				
+				if (decimals) str += abs(variables[i]).toFixed(decimals) + names[i];
+				else str += abs(roundTo(variables[i], 2)).toString() + names[i];
+			}
 		}
 		return str;
 	}
@@ -78,7 +78,9 @@ class Conic {
 		// Solve translation.
 		// The vector representing what each line of the system equals to [-d / 2, -e / 2]
 		const equals = math.multiply(-1, this.mat.subset(math.index([0, 1], 2)));
-		return new Vector(solveLinear(submatrix, equals));
+		const result = solveLinear(submatrix, equals);
+		if (result === INDETERMINATE_SYSTEM || result === IMPOSSIBLE_SYSTEM) return result;
+		return new Vector(result);
 	}
 	solve_rotation() {
 		// Solve rotation.
@@ -173,8 +175,7 @@ class Conic {
 		return [plst1, plst2];
 	}
 	get transformationMatrix() {
-		return math.multiply(this.coord_sys,
-							 this.new_coord_sys);
+		return this.coord_sys;
 	}
 	get scenter() { return scaled(this.center); }
 	retransform(plst) {
@@ -233,6 +234,72 @@ class Conic {
 		}
 		pop();
 	}
+	animateCoordSystemChange(coord_sys_to, step, finish_callback, lerp=0) {
+		if (coord_sys_to) {
+			this.coord_sys_from = this.coord_sys.copy();
+			this.coord_sys_to = coord_sys_to;
+			this.is_playing = true;
+		} else {
+			this.coord_sys = CoordinateSystem.lerp(this.coord_sys_from, this.coord_sys_to, lerp);
+			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys);
+		}
+		if (lerp < 1) window.requestAnimationFrame(() => this.animateCoordSystemChange(null, step, finish_callback, lerp + step));
+		else {
+			this.is_playing = false;
+			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys_to);
+			this.recalculate();
+			
+			if (finish_callback) window.requestAnimationFrame(finish_callback);
+		}
+	}
+	get_equation_for(new_coord_sys) {
+		const sys = new_coord_sys.inv();
+		const i = sys.basis.i;
+		const j = sys.basis.j;
+		const o = sys.origin;
+
+		if (!this.new_a) this.new_a = 0;
+		if (!this.new_b) this.new_b = 0;
+		if (!this.new_c) this.new_c = 0;
+		if (!this.new_d) this.new_d = 0;
+		if (!this.new_e) this.new_e = 0;
+
+		const a = this.new_a * pow(i.x, 2) + this.new_b * i.x * i.y + this.new_c * pow(i.y, 2);
+		const b = 2 * this.new_a * i.x * j.x + this.new_b * (i.x * j.y + i.y * j.x) + 2 * this.new_c * i.y * j.y;
+		const c = this.new_a * pow(j.x, 2) + this.new_b * j.x * j.y + this.new_c * pow(j.y, 2);
+		const d = 2 * this.new_a * o.x * i.x + this.new_b * (o.x * i.y + o.y * i.x) + 2 * this.new_c * o.y * i.y + this.new_d * i.x + this.new_e * i.y;
+		const e = 2 * this.new_a * o.x * j.x + this.new_b * (o.x * j.y + o.y * j.x) + 2 * this.new_c * o.y * j.y + this.new_d * j.x + this.new_e * j.y;
+		const f = this.new_a * pow(o.x, 2) + this.new_b * o.x * o.y + this.new_c * pow(o.y, 2) + this.new_d * o.x + this.new_e * o.y + this.new_f;
+
+		// const a = this.a * pow(i.x, 2) + this.b * i.x * i.y + this.c * pow(i.y, 2);
+		// const b = 2 * this.a * i.x * j.x + this.b * (i.x * j.y + i.y * j.x) + 2 * this.c * i.y * j.y;
+		// const c = this.a * pow(j.x, 2) + this.b * j.x * j.y + this.c * pow(j.y, 2);
+		// const d = 2 * this.a * o.x * i.x + this.b * (o.x * i.y + o.y * i.x) + 2 * this.c * o.y * i.y + this.d * i.x + this.e * i.y;
+		// const e = 2 * this.a * o.x * j.x + this.b * (o.x * j.y + o.y * j.x) + 2 * this.c * o.y * j.y + this.d * j.x + this.e * j.y;
+		// const f = this.a * pow(o.x, 2) + this.b * o.x * o.y + this.c * pow(o.y, 2) + this.d * o.x + this.e * o.y + this.f;
+		return [a, b, c, d, e, f];
+	}
+	/*
+	get_equation_for(origin, ang) {
+		// const [h, k, _] = math.multiply(math.inv(this.coord_sys), [origin.x, origin.y, 1]).toArray();
+		const h = origin.x;
+		const k = origin.y;
+
+		if (!this.new_a) this.new_a = 0;
+		if (!this.new_b) this.new_b = 0;
+		if (!this.new_c) this.new_c = 0;
+		if (!this.new_d) this.new_d = 0;
+		if (!this.new_e) this.new_e = 0;
+
+		const a = this.new_a * pow(cos(ang), 2) + this.new_b * sin(ang) * cos(ang) + this.new_c * pow(sin(ang), 2);
+		const b = -2 * this.new_a * sin(ang) * cos(ang) + this.new_b * (pow(cos(ang), 2) - pow(sin(ang), 2)) + 2 * this.new_c * sin(ang) * cos(ang);
+		const c = this.new_a * pow(sin(ang), 2) - this.new_b * sin(ang) * cos(ang) + this.new_c * pow(cos(ang), 2);
+		const d =  2 * this.new_a * h * cos(ang) + this.new_b * (h * sin(ang) + k * cos(ang)) + 2 * this.new_c * k * sin(ang) + this.new_d * cos(ang) + this.new_e * sin(ang);
+		const e = -2 * this.new_a * h * sin(ang) + this.new_b * (h * cos(ang) - k * sin(ang)) + 2 * this.new_c * k * cos(ang) - this.new_d * sin(ang) + this.new_e * cos(ang);
+		const f = this.new_a * pow(h, 2) + this.new_b * h * k + this.new_c * pow(k, 2) + this.new_d * h + this.new_e * k + this.new_f;
+		return [a, b, c, d, e, f];
+	}
+	*/
 }
 
 function solveLinear(mat, vec) {

@@ -37,17 +37,12 @@ let font;
 
 let eps = 0.0001; // Small value used for comparisons with floating point values.
 let u, v, o; // u and v are base vectors. o is the origin vector aka. o = (0, 0).
+let global_coordinate_system;
 let clickable_origin;
 let rotation; // Used to denote the overall rotation of the basis.
 
 // Animation parameters
 let is_playing;
-let rotation_from;
-let rotation_to;
-let origin_from;
-let origin_to;
-let anim_step = 0.005;
-let anim_prog = 0;
 
 let g;
 
@@ -109,17 +104,13 @@ function setup() {
 
 	solve_btn = createButton("Resolver");
 	solve_btn.mouseClicked(() => {
-		rotation_from = rotation;
-		rotation_to = g.rotation;
-		origin_from = o.copy();
-		origin_to = g.center;
 		is_playing = true;
+		g.animateCoordSystemChange(global_coordinate_system, 0.005, () => is_playing = false);
 	});
 
 	attatch_btn = createButton("Usar como base");
 	attatch_btn.mouseClicked(() => {
-		g.set_basis(u, v);
-		g.set_origin(o);
+		g.set_coordinate_system(globalBasis);
 	})
 
   // let group = createElement('ol');
@@ -169,35 +160,21 @@ function setup() {
 	rotation = 0;
 	is_playing = false;
 
-	origin_from = createVector(0,0);
-	origin_to = createVector(2,1);
-	rotation_from = 0;
-	rotation_to = PI / 6;
-
 	u = new UserVector(1, 0, "î", color(133, 192, 104), 5, false);
 	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5, false);
-	
-	// createUserVector(createVector(0, 0), createVector(1, 1), "w", color(255), 2);
+
+	global_coordinate_system = new CoordinateSystem(Vector.vec2d(o.x, o.y), new Basis([u, v]));
 
 	g = new Conic(4, -4, 7, 12, 6, -9);
 }
 
 function draw() {
-	equation_text.elt.textContent = g.toString();
-	// if (abs(g.a - a_slider.value()) > eps ||
-	// 	abs(g.b - b_slider.value()) > eps ||
-	// 	abs(g.c - c_slider.value()) > eps ||
-	// 	abs(g.d - d_slider.value()) > eps ||
-	// 	abs(g.e - e_slider.value()) > eps ||
-	// 	abs(g.f - f_slider.value()) > eps) {
-	// 	g.a = a_slider.value();
-	// 	g.b = b_slider.value();
-	// 	g.c = c_slider.value();
-	// 	g.d = d_slider.value();
-	// 	g.e = e_slider.value();
-	// 	g.f = f_slider.value();
-	// 	g.recalculate();
-	// }
+	if (g.is_playing)
+		equation_text.elt.textContent = g.toString(1);
+	else
+		equation_text.elt.textContent = g.toString();
+	
+	updateSliders();
 	// Update the slider values.
 	space_size = space_size_slider.value();
 
@@ -209,19 +186,6 @@ function draw() {
 			rotation = val;
 			is_dragging = true;
 		}
-	} else {
-		const val = rotation_from + (rotation_to - rotation_from) * anim_prog
-		rotation_slider.value(map(val, 0, TWO_PI, 0, 360));
-		o.set(p5.Vector.lerp(origin_from, origin_to, anim_prog));
-		clickable_origin.drag_offset = scaled(o);
-		anim_prog += anim_step;
-		
-		u.rotate(val - rotation);
-		v.rotate(val - rotation);
-		rotation = val;
-		is_dragging = true;
-
-		if (anim_prog >= 1) is_playing = false;
 	}
 
 	background(0);
@@ -284,7 +248,7 @@ function draw() {
 	
 	u.update();
 	v.update();
-
+	global_coordinate_system.update(Vector.vec2d(o.x, o.y), new Basis([u, v]));
 	// Draw the vectors.
 	u.draw();
 	v.draw();
@@ -313,6 +277,49 @@ function createUserVector(origin, vector, label, clr, weight) {
 	vec.set_basis(u, v);
 	user_vectors.push(vec);
 	return vec;
+}
+
+function updateSliders() {
+	if (abs(g.a - a_slider.value()) > eps ||
+		abs(g.b - b_slider.value()) > eps ||
+		abs(g.c - c_slider.value()) > eps ||
+		abs(g.d - d_slider.value()) > eps ||
+		abs(g.e - e_slider.value()) > eps ||
+		abs(g.f - f_slider.value()) > eps) {
+		if (!is_playing) {
+			g.a = a_slider.value();
+			g.b = b_slider.value();
+			g.c = c_slider.value();
+			g.d = d_slider.value();
+			g.e = e_slider.value();
+			g.f = f_slider.value();
+			g.recalculate();
+		} else {
+			a_slider.elt.min = min(a_slider.elt.min, g.a);
+			a_slider.elt.max = max(a_slider.elt.max, g.a);
+			a_slider.value(g.a);
+			
+			b_slider.elt.min = min(b_slider.elt.min, g.b);
+			b_slider.elt.max = max(b_slider.elt.max, g.b);
+			b_slider.value(g.b);
+			
+			c_slider.elt.min = min(c_slider.elt.min, g.c);
+			c_slider.elt.max = max(c_slider.elt.max, g.c);
+			c_slider.value(g.c);
+			
+			d_slider.elt.min = min(d_slider.elt.min, g.d);
+			d_slider.elt.max = max(d_slider.elt.max, g.d);
+			d_slider.value(g.d);
+			
+			e_slider.elt.min = min(e_slider.elt.min, g.e);
+			e_slider.elt.max = max(e_slider.elt.max, g.e);
+			e_slider.value(g.e);
+			
+			f_slider.elt.min = min(f_slider.elt.min, g.f);
+			f_slider.elt.max = max(f_slider.elt.max, g.f);
+			f_slider.value(g.f);
+		}
+	}
 }
 
 function scaled(val) { return val instanceof p5.Vector ? p5.Vector.mult(val, scl) : val * scl; }

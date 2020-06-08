@@ -48,3 +48,9 @@ function wrapDiv(...elts) {
   elts.forEach(elt => elt.parent(div));
   return div;
 }
+
+function roundTo(num, decimals) {
+  let power = 1;
+  for (let i = 0; i < decimals; i++) power *= 10;
+  return Math.round(num * power) / power;
+}

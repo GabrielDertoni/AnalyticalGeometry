@@ -25,6 +25,7 @@ let show_hitbox = false;
  * scl variable. Pixels are a fixed unit and have a direct relation to pixel size in html canvas.
  */
 class UserVector extends p5.Vector {
+	static list = [];
 	constructor(x, y, label, clr, weight, movable_origin=false) {
 		// The x, y values of the vector will always be written in the u, v basis and in units.
 		super(x, y, 0);
@@ -55,6 +56,7 @@ class UserVector extends p5.Vector {
 		this.i = createVector(1, 0);
 		this.j = createVector(0, 1);
 		this.o = createVector(0, 0);
+		UserVector.list.push(this);
 	}
 	draw() {
 		strokeWeight(this.weight);
