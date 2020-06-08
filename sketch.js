@@ -184,20 +184,20 @@ function setup() {
 
 function draw() {
 	equation_text.elt.textContent = g.toString();
-	// if (abs(g.a - a_slider.value()) > eps ||
-	// 	abs(g.b - b_slider.value()) > eps ||
-	// 	abs(g.c - c_slider.value()) > eps ||
-	// 	abs(g.d - d_slider.value()) > eps ||
-	// 	abs(g.e - e_slider.value()) > eps ||
-	// 	abs(g.f - f_slider.value()) > eps) {
-	// 	g.a = a_slider.value();
-	// 	g.b = b_slider.value();
-	// 	g.c = c_slider.value();
-	// 	g.d = d_slider.value();
-	// 	g.e = e_slider.value();
-	// 	g.f = f_slider.value();
-	// 	g.recalculate();
-	// }
+	/*if (abs(g.a - a_slider.value()) > eps ||
+        abs(g.b - b_slider.value()) > eps ||
+	    abs(g.c - c_slider.value()) > eps ||
+	 	abs(g.d - d_slider.value()) > eps ||
+	 	abs(g.e - e_slider.value()) > eps ||
+	 	abs(g.f - f_slider.value()) > eps) {
+	 	g.a = a_slider.value();
+	 	g.b = b_slider.value();
+	 	g.c = c_slider.value();
+	 	g.d = d_slider.value();
+	 	g.e = e_slider.value();
+	 	g.f = f_slider.value();
+	    	g.recalculate();
+    }*/
 	// Update the slider values.
 	space_size = space_size_slider.value();
 

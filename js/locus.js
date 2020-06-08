@@ -1,5 +1,5 @@
 const IMPOSSIBLE_SYSTEM = null;
-const INDETERMINATE_SYSTEM = NaN;
+const INDETERMINATE_SYSTEM = "indeterminate";
 
 class Conic {
 	constructor(a, b, c, d, e, f) {
@@ -78,7 +78,9 @@ class Conic {
 		// Solve translation.
 		// The vector representing what each line of the system equals to [-d / 2, -e / 2]
 		const equals = math.multiply(-1, this.mat.subset(math.index([0, 1], 2)));
-		return new Vector(solveLinear(submatrix, equals));
+        const result = solveLinear(submatrix, equals);
+        if (result === INDETERMINATE_SYSTEM || result === IMPOSSIBLE_SYSTEM) return result;
+        return new Vector(result);
 	}
 	solve_rotation() {
 		// Solve rotation.
@@ -175,11 +177,41 @@ class Conic {
     
     //Classify the conic by your type
     classify(){
-        if(this
-
-    }
-
-	get transformationMatrix() {
+        if(this.type === "eliptical"){
+            if((this.new_a > 0 && this.new_c > 0 && this.new_f > 0) ||
+                this.new_a < 0 && this.new_c < 0 && this.new_f < 0)
+                return "Vazio";
+            if(this.new_f === 0){
+                return "Ponto";
+            }else{
+                if(this.new_d === 0 && this.new_e === 0){
+                    return "Circunferência";
+                }else{
+                    return "Elipse";
+                }
+            }
+        }else if(this.type === "hyperbolical"){
+            if(this.new_f === 0){
+                return "Retas Concorrentes";
+            }else{
+                return "Hipérbole";
+            }
+        }else{
+            if(this.new_b != 0){
+                if(this.new_d != 0){
+                    return "Retas Paralelas"
+                }else{
+                    return "Reta"
+                }
+            }else if((this.new_a > 0 && this.new_b < 0) ||
+                     (this.new_a < 0 && this.new_b > 0)){
+                return "Parábola";
+            }else{
+                return "Vazio";
+            }
+        }
+    }	
+    get transformationMatrix() {
 		return math.multiply(this.coord_sys,
 							 this.new_coord_sys);
 	}
