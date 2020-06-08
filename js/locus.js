@@ -306,36 +306,8 @@ class Conic {
 		const d = 2 * this.new_a * o.x * i.x + this.new_b * (o.x * i.y + o.y * i.x) + 2 * this.new_c * o.y * i.y + this.new_d * i.x + this.new_e * i.y;
 		const e = 2 * this.new_a * o.x * j.x + this.new_b * (o.x * j.y + o.y * j.x) + 2 * this.new_c * o.y * j.y + this.new_d * j.x + this.new_e * j.y;
 		const f = this.new_a * pow(o.x, 2) + this.new_b * o.x * o.y + this.new_c * pow(o.y, 2) + this.new_d * o.x + this.new_e * o.y + this.new_f;
-
-		// const a = this.a * pow(i.x, 2) + this.b * i.x * i.y + this.c * pow(i.y, 2);
-		// const b = 2 * this.a * i.x * j.x + this.b * (i.x * j.y + i.y * j.x) + 2 * this.c * i.y * j.y;
-		// const c = this.a * pow(j.x, 2) + this.b * j.x * j.y + this.c * pow(j.y, 2);
-		// const d = 2 * this.a * o.x * i.x + this.b * (o.x * i.y + o.y * i.x) + 2 * this.c * o.y * i.y + this.d * i.x + this.e * i.y;
-		// const e = 2 * this.a * o.x * j.x + this.b * (o.x * j.y + o.y * j.x) + 2 * this.c * o.y * j.y + this.d * j.x + this.e * j.y;
-		// const f = this.a * pow(o.x, 2) + this.b * o.x * o.y + this.c * pow(o.y, 2) + this.d * o.x + this.e * o.y + this.f;
 		return [a, b, c, d, e, f];
 	}
-	/*
-	get_equation_for(origin, ang) {
-		// const [h, k, _] = math.multiply(math.inv(this.coord_sys), [origin.x, origin.y, 1]).toArray();
-		const h = origin.x;
-		const k = origin.y;
-
-		if (!this.new_a) this.new_a = 0;
-		if (!this.new_b) this.new_b = 0;
-		if (!this.new_c) this.new_c = 0;
-		if (!this.new_d) this.new_d = 0;
-		if (!this.new_e) this.new_e = 0;
-
-		const a = this.new_a * pow(cos(ang), 2) + this.new_b * sin(ang) * cos(ang) + this.new_c * pow(sin(ang), 2);
-		const b = -2 * this.new_a * sin(ang) * cos(ang) + this.new_b * (pow(cos(ang), 2) - pow(sin(ang), 2)) + 2 * this.new_c * sin(ang) * cos(ang);
-		const c = this.new_a * pow(sin(ang), 2) - this.new_b * sin(ang) * cos(ang) + this.new_c * pow(cos(ang), 2);
-		const d =  2 * this.new_a * h * cos(ang) + this.new_b * (h * sin(ang) + k * cos(ang)) + 2 * this.new_c * k * sin(ang) + this.new_d * cos(ang) + this.new_e * sin(ang);
-		const e = -2 * this.new_a * h * sin(ang) + this.new_b * (h * cos(ang) - k * sin(ang)) + 2 * this.new_c * k * cos(ang) - this.new_d * sin(ang) + this.new_e * cos(ang);
-		const f = this.new_a * pow(h, 2) + this.new_b * h * k + this.new_c * pow(k, 2) + this.new_d * h + this.new_e * k + this.new_f;
-		return [a, b, c, d, e, f];
-	}
-	*/
 }
 
 function solveLinear(mat, vec) {
