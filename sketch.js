@@ -84,22 +84,27 @@ function setup() {
 	rotation_slider = createSlider(0, 360, 0, 0);
 	rotation_slider.style('width', '180px');
   
-	a_slider = createSlider(-5, 5, 4, 0);
+	// g = new Conic(4, -4, 7, 12, 6, -8);
+	// g = new Conic(0, 0, -1, 1, 0, 0); // Parábola
+	// g = new Conic(0, 0, 0, 1, -1, 0); // Uma reta
+	g = new Conic(1, -4, 4, -6, 12, 8); // Duas retas
+
+	a_slider = createSlider(-5, 5, g.a, 0);
 	a_slider.style('width', '180px');
 
-	b_slider = createSlider(-5, 5, -4, 0);
+	b_slider = createSlider(-5, 5, g.b, 0);
 	b_slider.style('width', '180px');
 
-	c_slider = createSlider(-10, 10, 7, 0);
+	c_slider = createSlider(-10, 10, g.c, 0);
 	c_slider.style('width', '180px');
   
- 	d_slider = createSlider(-20, 20, 12, 0);
+ 	d_slider = createSlider(-20, 20, g.d, 0);
 	d_slider.style('width', '180px');
   
-	e_slider = createSlider(-10, 10, 6, 0);
+	e_slider = createSlider(-10, 14, g.e, 0);
 	e_slider.style('width', '180px');
   
-	f_slider = createSlider(-12, 12, -9, 0);
+	f_slider = createSlider(-12, 12, g.f, 0);
 	f_slider.style('width', '180px');
 
 	solve_btn = createButton("Resolver");
@@ -114,7 +119,7 @@ function setup() {
 	})
 
   // let group = createElement('ol');
-  let group = new p5.Element(document.getElementById("controls"));
+	let group = new p5.Element(document.getElementById("controls"));
 	let list_items = [
 		draw_fixed_grid_checkbox,
 		show_hitbox_checkbox,
@@ -165,7 +170,7 @@ function setup() {
 
 	global_coordinate_system = new CoordinateSystem(Vector.vec2d(o.x, o.y), new Basis([u, v]));
 
-	g = new Conic(4, -4, 7, 12, 6, -9);
+	// g = new Conic(4, -4, 7, 12, 6, -9);
 }
 
 function draw() {

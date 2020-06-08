@@ -36,23 +36,50 @@ class Conic {
 				if (this.new_a == 0) {
 					const transl = this.solve_vertex(-this.new_c / new_d, -new_e / new_d, -this.f / new_d);
 					this.center = createVector(transl[1], transl[0]);
-					this.new_f = 0;
 					this.new_d = new_d;
 					this.new_e = 0;
+					this.new_f = 0;
+					this.coord_sys = new CoordinateSystem(transl, Basis.fromAngle(this.rotation));
 				} else {
 					const transl = this.solve_vertex(-this.new_a / new_e, -new_d / new_e, -this.f / new_e);
 					this.center = createVector(transl[0], transl[1]);
-					this.new_f = 0;
 					this.new_e = new_e;
+					this.new_f = 0;
 					this.new_d = 0;
+					this.coord_sys = new CoordinateSystem(transl, Basis.fromAngle(this.rotation));
 				}
+				this.new_b = 0;
 			}
 		} else if (translation === INDETERMINATE_SYSTEM) {
-			throw new Error("Infinite translations are possible.");
+			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
+			if (this.b != 0) {
+				this.coord_sys = new CoordinateSystem(Vector.vec2d(0, -this.d / this.b), Basis.fromAngle(this.rotation));
+				const x = 0;
+				const y = -this.d / this.b;
+				this.new_f = this.d / 2 * x + this.e / 2 * y + this.f;
+				this.new_d = 0;
+				this.new_e = 0;
+			} else if (this.a != 0) {
+				this.coord_sys = new CoordinateSystem(Vector.vec2d(-this.d / (2 * this.a), 0), Basis.fromAngle(this.rotation));
+				const x = -this.d / (2 * this.a);
+				const y = 0;
+				this.new_f = this.d / 2 * x + this.e / 2 * y + this.f;
+				this.new_d = 0;
+				this.new_e = 0;
+			} else {
+				this.coord_sys = new CoordinateSystem(Vector.vec2d(0, 0), Basis.fromAngle(this.rotation));
+				this.new_f = this.f;
+				this.new_d = this.d;
+				this.new_e = this.e;
+			}
+			this.new_b = 0;
 		} else {
 			this.new_f = this.d / 2 * translation.x + this.e / 2 * translation.y + this.f;
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
 			this.coord_sys = new CoordinateSystem(translation, Basis.fromAngle(this.rotation));
+			this.new_b = 0;
+			this.new_d = 0;
+			this.new_e = 0;
 		}
 	}
 	toString(decimals) {
@@ -70,9 +97,10 @@ class Conic {
 				else str += abs(roundTo(variables[i], 2)).toString() + names[i];
 			}
 		}
+		str += " = 0";
 		return str;
 	}
-	solve_vertex = (a, b, c) => [-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)];
+	solve_vertex = (a, b, c) => new Vector([-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)]);
 	solve_translation() {
 		const submatrix = this.mat.subset(math.index([0,1], [0,1]));
 		// Solve translation.
@@ -107,35 +135,45 @@ class Conic {
 	}
 	set_coordinate_system(coord_sys) { this.coord_sys = coord_sys; }
 	sampleY(x) {
-		if (this.type === "parabolical") {
-			if (this.new_a != 0) {
-				const inner = -this.new_a * pow(x, 2) / this.new_e;
-				return [inner, inner];
+		if (this.new_c != 0) {
+			const a = this.new_c;
+			const b = this.new_b * x + this.new_e;
+			const c = this.new_a * pow(x, 2) + this.new_d * x + this.new_f;
+			const delta = pow(b, 2) - 4 * a * c;
+			if (delta >= 0) {
+				return [
+					(-b + sqrt(delta)) / (2*a),
+					(-b - sqrt(delta)) / (2*a)
+				];
 			} else {
-				const inner = -this.new_d * x / this.new_c;
-				if (inner >= 0) return [sqrt(inner), -sqrt(inner)];
 				return [];
 			}
 		} else {
-			const inner = (this.new_a * pow(x, 2) + this.new_f) / -this.new_c;
-			if (inner >= 0) return [sqrt(inner), -sqrt(inner)];
-			return [];
+			return [
+				-(this.new_a * pow(x, 2) + this.new_d * x + this.new_f) / (this.new_b * x + this.new_e),
+				-(this.new_a * pow(x, 2) + this.new_d * x + this.new_f) / (this.new_b * x + this.new_e)
+			]
 		}
 	}
 	sampleX(y) {
-		if (this.type === "parabolical") {
-			if (this.new_a != 0) {
-				const inner = -this.new_e * y / -this.new_a;
-				return [sqrt(inner), -sqrt(inner)];
+		if (this.new_a != 0) {
+			const a = this.new_a;
+			const b = this.new_b * y + this.new_d;
+			const c = this.new_c * pow(y, 2) + this.new_e * y + this.new_f;
+			const delta = pow(b, 2) - 4 * a * c;
+			if (delta >= 0) {
+				return [
+					(-b + sqrt(delta)) / (2*a),
+					(-b - sqrt(delta)) / (2*a)
+				];
 			} else {
-				const inner = -this.new_c * pow(y, 2) / this.new_d;
-				if (inner >= 0) return [inner, inner];
 				return [];
 			}
 		} else {
-			const inner = (this.new_c * pow(y, 2) + this.new_f) / -this.new_a;
-			if (inner >= 0) return [sqrt(inner), -sqrt(inner)];
-			return [];
+			return [
+				-(this.new_c * pow(y, 2) + this.new_e * y + this.new_f) / (this.new_b * y + this.new_d),
+				-(this.new_c * pow(y, 2) + this.new_e * y + this.new_f) / (this.new_b * y + this.new_d)
+			]
 		}
 	}
 	sample(n) {
@@ -152,13 +190,13 @@ class Conic {
 		for (let i = 0; i < n; i++) {
 			let v;
 			if ((this.type === "hyperbolical" && this.new_c * this.new_f > 0) ||
-				(this.type === "parabolical"  && this.new_c != 0)) {
+				(this.type === "parabolical"  && this.new_c != 0 && this.new_d != 0)) {
 				v = (i / n) * (height / scl) - (height / (2*scl));
 			} else {
 				v = (i / n) * (figWidth / scl) - (figWidth / (2*scl));
 			}
 			if ((this.type === "hyperbolical" && this.new_c * this.new_f > 0) ||
-				(this.type === "parabolical"  && this.new_c != 0)) {
+				(this.type === "parabolical"  && this.new_c != 0 && this.new_d != 0)) {
 				const xs = this.sampleX(v);
 				if (xs.length > 0) {
 					plst1.push([xs[0], v].map(scaled));
@@ -178,7 +216,7 @@ class Conic {
 		return this.coord_sys;
 	}
 	//Classify the conic by your type
-	classify(){
+	classify() {
 		if (this.type === "eliptical") {
 			if ((this.new_a > 0 && this.new_c > 0 && this.new_f > 0) ||
 				 this.new_a < 0 && this.new_c < 0 && this.new_f < 0)
@@ -186,7 +224,7 @@ class Conic {
 			if (this.new_f === 0) {
 				return "Ponto";
 			} else {
-				if (this.new_d === 0 && this.new_e === 0) {
+				if (this.new_a === this.new_c && this.new_d === 0 && this.new_e === 0) {
 					return "Circunferência";
 				} else {
 					return "Elipse";
@@ -199,19 +237,19 @@ class Conic {
 				return "Hipérbole";
 			}
 		} else {
-			if (this.new_b != 0) {
-				if (this.new_d != 0) {
-					return "Retas Paralelas"
-				} else {
-					return "Reta"
-				}
-			} else if ((this.new_a > 0 && this.new_b < 0) ||
-					   (this.new_a < 0 && this.new_b > 0)) {
-				return "Parábola";
-			} else {
+			if ((this.new_a != 0 || this.new_c != 0) && this.new_d === 0 && 
+				 this.new_e === 0 && this.new_f != 0)
+				return "Retas Paralelas";
+			else if(this.new_a === 0 && this.new_c === 0 && this.new_d != 0 &&
+					this.new_e != 0) {
+				return "Reta";
+			}else if((this.new_a != 0 || this.new_c != 0) &&
+					 (this.new_d === 0 || this.new_e === 0) && this.new_f === 0){
+				return "Parábola"
+			}else {
 				return "Vazio";
 			}
-		}
+		} 
 	}
 	get scenter() { return scaled(this.center); }
 	retransform(plst) {
