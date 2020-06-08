@@ -184,6 +184,12 @@ class Locus {
 		}
 		return [plst1, plst2];
 	}
+    //Classify the conic by your type
+    classify(){
+        if(this
+
+    }
+
 	get localTransformationMatrix() {
 		return math.matrix([[ cos(this.rotation), -sin(this.rotation), this.scenter.x],
 							[ sin(this.rotation),  cos(this.rotation), this.scenter.y],
