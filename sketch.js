@@ -72,10 +72,7 @@ function preload() {
 function setup() {
 	// Creates the html canvas on wich to draw all things.
 	createCanvas(windowWidth, windowHeight);
-
-	screenCenter = createVector(0, 0);
-	screenBasis = new Basis(createVector(1, 0), createVector(0, 1));
-
+	
 	// Setup all of the html interactive inputs (slidesrs, checkboxes, etc).
 	draw_fixed_grid_checkbox = createCheckbox('Grid', draw_fixed_grid);
 	draw_fixed_grid_checkbox.changed(() => draw_fixed_grid = draw_fixed_grid_checkbox.checked());
@@ -182,25 +179,25 @@ function setup() {
 	
 	// createUserVector(createVector(0, 0), createVector(1, 1), "w", color(255), 2);
 
-  g = new Locus(-4, 4, 7, 12, 6, -9);
+	g = new Conic(4, -4, 7, 12, 6, -9);
 }
 
 function draw() {
-	if (abs(g.a - a_slider.value()) > eps ||
-		abs(g.b - b_slider.value()) > eps ||
-		abs(g.c - c_slider.value()) > eps ||
-		abs(g.d - d_slider.value()) > eps ||
-		abs(g.e - e_slider.value()) > eps ||
-		abs(g.f - f_slider.value()) > eps) {
-	g.a = a_slider.value();
-	g.b = b_slider.value();
-	g.c = c_slider.value();
-	g.d = d_slider.value();
-	g.e = e_slider.value();
-	g.f = f_slider.value();
 	equation_text.elt.textContent = g.toString();
-	g.recalculate();
-	}
+	// if (abs(g.a - a_slider.value()) > eps ||
+	// 	abs(g.b - b_slider.value()) > eps ||
+	// 	abs(g.c - c_slider.value()) > eps ||
+	// 	abs(g.d - d_slider.value()) > eps ||
+	// 	abs(g.e - e_slider.value()) > eps ||
+	// 	abs(g.f - f_slider.value()) > eps) {
+	// 	g.a = a_slider.value();
+	// 	g.b = b_slider.value();
+	// 	g.c = c_slider.value();
+	// 	g.d = d_slider.value();
+	// 	g.e = e_slider.value();
+	// 	g.f = f_slider.value();
+	// 	g.recalculate();
+	// }
 	// Update the slider values.
 	space_size = space_size_slider.value();
 
