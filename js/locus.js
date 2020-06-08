@@ -65,19 +65,18 @@ class Locus {
 		}
 	}
 	toString() {
-		var toPrint = [[g.a,g.b, g.c,g.d,g.e,g.f],
-						[`x²`,`xy`,`y²`,`x`,`y`,``]];
-		var first = true;
-		for(var i = 0; i < 6; i++){
-			toPrint[0][i] = (toPrint[0][i]<0)? " - " + toPrint[0][i].toFixed(2).substring(1):
-																 (toPrint[0][i]!=0)?((first)?"": " + ")+ toPrint[0][i].toFixed(2):"";
-			first = (first && toPrint[0][i] == 0);
-			if(toPrint[0][i] == ""){
-				toPrint[1][i] = "";
-			}
+		let variables = [this.a, this.b, this.c, this.d, this.e, this.f];
+		let names = ['x²', 'xy', 'y²', 'x', 'y', ''];
+		let str = "";
+		for (let i = 0; i < variables.length; i++) {
+			if (variables[i] > 0 && str.length > 0) str += " + ";
+			else if (variables[i] < 0)
+				if (str.length > 0) str += " - ";
+				else str += "-";
+			
+			if (round(variables[i], 2) != 0) str += abs(variables[i]).toFixed(2) + names[i];
 		}
-
-		return `${toPrint[0][0]} ${toPrint[1][0]}${toPrint[0][1]} ${toPrint[1][1]}${toPrint[0][2]} ${toPrint[1][2]}${toPrint[0][3]} ${toPrint[1][3]}${toPrint[0][4]} ${toPrint[1][4]}${toPrint[0][5]}`;
+		return str;
 	}
 	solve_vertex = (a, b, c) => [-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)];
 	solve_translation() {

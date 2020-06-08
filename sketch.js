@@ -182,6 +182,7 @@ function setup() {
 	
 	// createUserVector(createVector(0, 0), createVector(1, 1), "w", color(255), 2);
 
+  g = new Locus(-4, 4, 7, 12, 6, -9);
 }
 
 function draw() {
