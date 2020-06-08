@@ -177,6 +177,42 @@ class Conic {
 	get transformationMatrix() {
 		return this.coord_sys;
 	}
+	//Classify the conic by your type
+	classify(){
+		if (this.type === "eliptical") {
+			if ((this.new_a > 0 && this.new_c > 0 && this.new_f > 0) ||
+				 this.new_a < 0 && this.new_c < 0 && this.new_f < 0)
+				return "Vazio";
+			if (this.new_f === 0) {
+				return "Ponto";
+			} else {
+				if (this.new_d === 0 && this.new_e === 0) {
+					return "Circunferência";
+				} else {
+					return "Elipse";
+				}
+			}
+		} else if (this.type === "hyperbolical") {
+			if (this.new_f === 0) {
+				return "Retas Concorrentes";
+			} else {
+				return "Hipérbole";
+			}
+		} else {
+			if (this.new_b != 0) {
+				if (this.new_d != 0) {
+					return "Retas Paralelas"
+				} else {
+					return "Reta"
+				}
+			} else if ((this.new_a > 0 && this.new_b < 0) ||
+					   (this.new_a < 0 && this.new_b > 0)) {
+				return "Parábola";
+			} else {
+				return "Vazio";
+			}
+		}
+	}
 	get scenter() { return scaled(this.center); }
 	retransform(plst) {
 		plst = math.concat(plst, math.ones([plst.length, 1]), 1);
