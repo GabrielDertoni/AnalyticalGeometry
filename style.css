@@ -27,9 +27,22 @@ button {
   margin-bottom: 0.3em;
 }
 
-#equation {
+.equation-container {
   position: absolute;
-  font-size: 2em;
   right: 1em;
   top: 0;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  margin-top: 2em;
+}
+#equation {
+  font-size: 2em;
+  margin: 0 0.5em;
+}
+.equation-container svg {
+  fill: white;
+}
+.equation-container svg:hover {
+  cursor: pointer;
 }

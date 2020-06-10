@@ -9,7 +9,6 @@ class Conic {
 		this.d = d;
 		this.e = e;
 		this.f = f;
-		// this.coord_sys = new CoordinateSystem(Vector.screenOrigin, Basis.screen);
 		this.is_playing = false;
 		this.coord_sys_from;
 		this.coord_sys_to;
@@ -29,26 +28,32 @@ class Conic {
 		const translation = this.solve_translation();
 		if (translation === IMPOSSIBLE_SYSTEM) {
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
-			const new_d =  this.d * cos(this.rotation) + this.e * sin(this.rotation);
-			const new_e = -this.d * sin(this.rotation) + this.e * cos(this.rotation);
+			const new_d =  this.d * cos(-this.rotation) + this.e * sin(-this.rotation);
+			const new_e = -this.d * sin(-this.rotation) + this.e * cos(-this.rotation);
 			if (new_d != 0 || new_e != 0) {
 				// Retry to solve translation.
-				if (this.new_a == 0) {
-					const transl = this.solve_vertex(-this.new_c / new_d, -new_e / new_d, -this.f / new_d);
-					this.center = createVector(transl[1], transl[0]);
+				if (this.new_a === 0) {
+					let transl = this.solve_vertex(-this.new_c / new_d, -new_e / new_d, -this.f / new_d);
+					transl = Vector.vec2d(transl.y, transl.x);
+					transl = transl.transform(Basis.fromMatrix(
+						[[cos(this.rotation), -sin(this.rotation)],
+						 [sin(this.rotation),  cos(this.rotation)]]
+					));
 					this.new_d = new_d;
-					this.new_e = 0;
-					this.new_f = 0;
 					this.coord_sys = new CoordinateSystem(transl, Basis.fromAngle(this.rotation));
+					this.new_e = 0;
 				} else {
 					const transl = this.solve_vertex(-this.new_a / new_e, -new_d / new_e, -this.f / new_e);
-					this.center = createVector(transl[0], transl[1]);
+					transl = transl.transform(Basis.fromMatrix(
+						[[cos(this.rotation), -sin(this.rotation)],
+						 [sin(this.rotation),  cos(this.rotation)]]
+					));
+					// this.center = createVector(transl[0], transl[1]);
 					this.new_e = new_e;
-					this.new_f = 0;
-					this.new_d = 0;
 					this.coord_sys = new CoordinateSystem(transl, Basis.fromAngle(this.rotation));
+					this.new_d = 0;
 				}
-				this.new_b = 0;
+				this.new_f = 0;
 			}
 		} else if (translation === INDETERMINATE_SYSTEM) {
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
@@ -72,15 +77,14 @@ class Conic {
 				this.new_d = this.d;
 				this.new_e = this.e;
 			}
-			this.new_b = 0;
 		} else {
 			this.new_f = this.d / 2 * translation.x + this.e / 2 * translation.y + this.f;
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
 			this.coord_sys = new CoordinateSystem(translation, Basis.fromAngle(this.rotation));
-			this.new_b = 0;
 			this.new_d = 0;
 			this.new_e = 0;
 		}
+		this.new_b = 0;
 	}
 	toString(decimals) {
 		let variables = [this.a, this.b, this.c, this.d, this.e, this.f];
@@ -100,6 +104,7 @@ class Conic {
 		str += " = 0";
 		return str;
 	}
+	// Find the vertex of a quadratic equation.
 	solve_vertex = (a, b, c) => new Vector([-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)]);
 	solve_translation() {
 		const submatrix = this.mat.subset(math.index([0,1], [0,1]));
@@ -119,7 +124,7 @@ class Conic {
 			return [this.a, this.c, rotation];
 		} else {
 			const cotg = (this.a - this.c) / this.b;
-			const rotation = atan(sqrt(1 + pow(cotg, 2)) - cotg);
+			const rotation = -atan(sqrt(1 + pow(cotg, 2)) - cotg);
 			const result = solveLinear(
 				math.matrix(
 					[[1, 1],
@@ -133,7 +138,13 @@ class Conic {
 			return result.concat(rotation);
 		}
 	}
-	set_coordinate_system(coord_sys) { this.coord_sys = coord_sys; }
+	// set_coordinate_system(coord_sys) {
+	// 	this.space_coord_sys = coord_sys;
+	// 	[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(global_coordinate_system);
+	// 	this.recalculate();
+	// 	this.coord_sys = coord_sys;
+	// }
+	// Given a x value, calculate the y value(s) for that x.
 	sampleY(x) {
 		if (this.new_c != 0) {
 			const a = this.new_c;
@@ -155,6 +166,7 @@ class Conic {
 			]
 		}
 	}
+	// Given a y value, calculate the x value(s) for that y.
 	sampleX(y) {
 		if (this.new_a != 0) {
 			const a = this.new_a;
@@ -173,9 +185,12 @@ class Conic {
 			return [
 				-(this.new_c * pow(y, 2) + this.new_e * y + this.new_f) / (this.new_b * y + this.new_d),
 				-(this.new_c * pow(y, 2) + this.new_e * y + this.new_f) / (this.new_b * y + this.new_d)
-			]
+			];
 		}
 	}
+	// Given a number n of points, try to sample n points scattered in the x or y axis of the screen.
+	// Returns a list with two lists of points. Each list contains the points of one of the solutions to
+	// the quadratic equations.
 	sample(n) {
 		let figWidth = width;
 		let figHeight = height;
@@ -191,7 +206,7 @@ class Conic {
 			let v;
 			if ((this.type === "hyperbolical" && this.new_c * this.new_f > 0) ||
 				(this.type === "parabolical"  && this.new_c != 0 && this.new_d != 0)) {
-				v = (i / n) * (height / scl) - (height / (2*scl));
+				v = (i / n) * (figHeight / scl) - (figHeight / (2*scl));
 			} else {
 				v = (i / n) * (figWidth / scl) - (figWidth / (2*scl));
 			}
@@ -215,43 +230,150 @@ class Conic {
 	get transformationMatrix() {
 		return this.coord_sys;
 	}
-	//Classify the conic by your type
-	classify() {
-		if (this.type === "eliptical") {
-			if ((this.new_a > 0 && this.new_c > 0 && this.new_f > 0) ||
-				 this.new_a < 0 && this.new_c < 0 && this.new_f < 0)
-				return "Vazio";
-			if (this.new_f === 0) {
-				return "Ponto";
-			} else {
-				if (this.new_a === this.new_c && this.new_d === 0 && this.new_e === 0) {
-					return "Circunferência";
-				} else {
-					return "Elipse";
-				}
-			}
-		} else if (this.type === "hyperbolical") {
-			if (this.new_f === 0) {
-				return "Retas Concorrentes";
-			} else {
-				return "Hipérbole";
-			}
-		} else {
-			if ((this.new_a != 0 || this.new_c != 0) && this.new_d === 0 && 
-				 this.new_e === 0 && this.new_f != 0)
-				return "Retas Paralelas";
-			else if(this.new_a === 0 && this.new_c === 0 && this.new_d != 0 &&
-					this.new_e != 0) {
-				return "Reta";
-			}else if((this.new_a != 0 || this.new_c != 0) &&
-					 (this.new_d === 0 || this.new_e === 0) && this.new_f === 0){
-				return "Parábola"
-			}else {
-				return "Vazio";
-			}
-		} 
+	// Classify the conic by type
+	get classification() {
+		const t = this.a + this.c;
+		const d11 = (this.c/2 * this.f) - (this.e/2 * this.e/2);
+		const d22 = (this.a   * this.f) - (this.d/2 * this.d/2);
+		const d33 = (this.a   * this.c) - (this.b/2 * this.b/2);
+		
+		const det = math.det(this.mat);
+
+		if (d33 > 0)
+			if (det != 0)
+				if (t * det > 0) return "void";
+				else return "ellipse";
+			else return "point";
+		else if (d33 < 0)
+			if (det != 0) return "hyperbole";
+			else return "competing_lines";
+		else if (det != 0) return "parable";
+		else if (d11 + d22 == 0) return "line";
+		else if(d11 + d22 > 0) return "void";
+		else if (this.a == 0 && this.b/2 == 0 && this.c == 0) return "line";
+		else return "paralel_lines";
 	}
-	get scenter() { return scaled(this.center); }
+	get info() {
+		/*
+			Classificação: <texto>
+			Centro?: <centro>
+			Focos?:
+				1. <foco1>
+				2. <foco2>
+				...
+			
+			Vértice?:
+				1. <vertice1>
+				2. <vertice2>
+				...
+			
+			Assíntotas?:
+				1. <formula1>
+				2. <formula2>
+			
+			Eixo?: <equação>
+		*/
+		const info = {};
+		if (this.classification === "void")
+			info["Classificação"] = "Conjunto Vazio";
+		else if (this.classification === "ellipse") {
+			info["Classificação"] = "Elipse";
+			info["Centro"] = `C = (${roundTo(this.coord_sys.origin.x, 2)}, ${roundTo(this.coord_sys.origin.y, 2)})`;
+			const a = sqrt(-this.new_f / this.new_a);
+			const b = sqrt(-this.new_f / this.new_c);
+			const c = sqrt(pow(a, 2) - pow(b, 2));
+			let f1, f2;
+			if (a > b) {
+				f1 = new Point2D( c, 0);
+				f2 = new Point2D(-c, 0);
+			} else {
+				f1 = new Point2D(0, c);
+				f2 = new Point2D(0, -c);
+			}
+			f1 = f1.transform(this.coord_sys);
+			f2 = f2.transform(this.coord_sys);
+			info["Focos"] = [
+				`F1 = (${roundTo(f1.x, 2)}, ${roundTo(f1.y, 2)})`,
+				`F2 = (${roundTo(f2.x, 2)}, ${roundTo(f2.y, 2)})`
+			];
+			const a1 = (new Point2D( a, 0)).transform(this.coord_sys);
+			const a2 = (new Point2D(-a, 0)).transform(this.coord_sys);
+			const b1 = (new Point2D(0, b)).transform(this.coord_sys);
+			const b2 = (new Point2D(0,-b)).transform(this.coord_sys);
+			info["Vértices"] = [
+				`A1 = (${roundTo(a1.x, 2)}, ${roundTo(a1.y, 2)})`,
+				`A2 = (${roundTo(a2.x, 2)}, ${roundTo(a2.y, 2)})`,
+				`B1 = (${roundTo(b1.x, 2)}, ${roundTo(b1.y, 2)})`,
+				`B2 = (${roundTo(b2.x, 2)}, ${roundTo(b2.y, 2)})`
+			];
+		} else if (this.classification === "hyperbole") {
+			info["Classificação"] = "Hipérbole";
+			info["Centro"] = `C = (${roundTo(this.coord_sys.origin.x, 2)}, ${roundTo(this.coord_sys.origin.y, 2)})`;
+			const a = sqrt(abs(this.new_f / this.new_a));
+			const b = sqrt(abs(this.new_f / this.new_c));
+			const c = sqrt(pow(a, 2) + pow(b, 2));
+			let f1, f2, v1, v2;
+			if (Math.sign(this.new_c) * Math.sign(this.new_f) > 0) {
+				f1 = new Point2D( c, 0);
+				f2 = new Point2D(-c, 0);
+				v1 = new Point2D( a, 0);
+				v2 = new Point2D(-a, 0);
+			} else {
+				f1 = new Point2D(0, c);
+				f2 = new Point2D(0,-c);
+				v1 = new Point2D(0, b);
+				v2 = new Point2D(0,-b);
+			}
+			f1 = f1.transform(this.coord_sys);
+			f2 = f2.transform(this.coord_sys);
+			v1 = v1.transform(this.coord_sys);
+			v2 = v2.transform(this.coord_sys);
+			info["Focos"] = [
+				`F1 = (${roundTo(f1.x, 2)}, ${roundTo(f1.y, 2)})`,
+				`F2 = (${roundTo(f2.x, 2)}, ${roundTo(f2.y, 2)})`
+			];
+			info["Vértices"] = [
+				`V1 = (${roundTo(v1.x, 2)}, ${roundTo(v1.y, 2)})`,
+				`V2 = (${roundTo(v2.x, 2)}, ${roundTo(v2.y, 2)})`
+			];
+			let [coefs1, coefs2] = this.get_asymptotes();
+			if (this.b !== 0) {
+				coefs1[1] = this.coord_sys.origin.y - coefs1[0] * this.coord_sys.origin.x;
+				coefs2[1] = this.coord_sys.origin.y - coefs2[0] * this.coord_sys.origin.x;
+			}
+			info["Assíntotas"] = [
+				`r: y = ${roundTo(coefs1[0], 2)}x + ${roundTo(coefs1[1], 2)}`,
+				`s: y = ${roundTo(coefs2[0], 2)}x + ${roundTo(coefs2[1], 2)}`
+			];
+		} else if (this.classification === "parable") {
+			info["Classificação"] = "Parábola";
+			let f;
+			if (this.new_d != 0) {
+				const p = this.new_d / 4;
+				f = (new Point2D(p, 0)).transform(this.coord_sys);
+			} else {
+				const p = this.new_e / 4;
+				f = (new Point2D(0, p)).transform(this.coord_sys);
+			}
+			
+			info["Foco"] = `F = (${roundTo(f.x, 2)}, ${roundTo(f.y, 2)})`;
+			info["Vértice"] = `V = (${roundTo(this.coord_sys.origin.x, 2)}, ${roundTo(this.coord_sys.origin.y, 2)})`;
+			const coefs = transformLinear([0, 1, 0], this.coord_sys);
+			if (this.b !== 0)
+				coefs[2] = this.coord_sys.origin.y - coefs[0] * this.coord_sys.origin.x;
+			
+			info["Eixo"] = `r: y = ${roundTo(coefs[0], 2)}x + ${roundTo(coefs[2], 2)}`;
+		} else if (this.classification === "competing_lines") {
+			info["Classificação"] = "Retas Concorrentes";
+		} else if (this.classification === "paralel_lines") {
+			info["Classificação"] = "Retas Paralelas";
+		} else if (this.classification === "line") {
+			info["Classificação"] = "Reta";
+		} else if (this.classification === "point") {
+			info["Classificação"] = "Ponto";
+		}
+		return info;
+	}
 	retransform(plst) {
 		plst = math.concat(plst, math.ones([plst.length, 1]), 1);
 		return math.transpose( // Transpose list of points to original shape
@@ -283,10 +405,13 @@ class Conic {
 	draw() {
 		push();
 		this.applyMatrix();
-		if (this.type == "eliptical") {
+		if (this.classification == "ellipse") {
 			const A = 2 * sqrt(-this.new_f / this.new_a);
 			const B = 2 * sqrt(-this.new_f / this.new_c);
 			ellipse(0, 0, scaled(A), scaled(B));
+		} else if (this.classification === "point") {
+			strokeWeight(10);
+			point(0, 0);
 		} else {
 			const n = 1000;
 			let [plst1, plst2] = this.sample(n);
@@ -320,23 +445,36 @@ class Conic {
 		if (lerp < 1) window.requestAnimationFrame(() => this.animateCoordSystemChange(null, step, finish_callback, lerp + step));
 		else {
 			this.is_playing = false;
-			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys_to);
+			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys);
 			this.recalculate();
 			
 			if (finish_callback) window.requestAnimationFrame(finish_callback);
 		}
 	}
+	get_asymptotes() {
+		if (this.classification != "hyperbole") return null;
+		const a = sqrt(abs(this.new_f / this.new_a));
+		const b = sqrt(abs(this.new_f / this.new_c));
+		const m = b / a;
+		// this.coord_sys
+		const sol1 = transformLinear([ m, 1, 0], this.coord_sys);
+		const sol2 = transformLinear([-m, 1, 0], this.coord_sys);
+		return [
+			[sol1[0], sol1[2]],
+			[sol2[0], sol2[2]]
+		];
+	}
 	get_equation_for(new_coord_sys) {
+		const coord_sys_s = this.coord_sys.inv();
+		const sys = CoordinateSystem.fromMatrix(math.multiply(
+			coord_sys_s,
+			new_coord_sys
+		));
+
 		const sys = new_coord_sys.inv();
 		const i = sys.basis.i;
 		const j = sys.basis.j;
 		const o = sys.origin;
-
-		if (!this.new_a) this.new_a = 0;
-		if (!this.new_b) this.new_b = 0;
-		if (!this.new_c) this.new_c = 0;
-		if (!this.new_d) this.new_d = 0;
-		if (!this.new_e) this.new_e = 0;
 
 		const a = this.new_a * pow(i.x, 2) + this.new_b * i.x * i.y + this.new_c * pow(i.y, 2);
 		const b = 2 * this.new_a * i.x * j.x + this.new_b * (i.x * j.y + i.y * j.x) + 2 * this.new_c * i.y * j.y;
@@ -348,34 +486,17 @@ class Conic {
 	}
 }
 
-function solveLinear(mat, vec) {
-	if (mat.size().length != 2)
-		throw new Error("Matrix must be 2 dimentional.");
-	if (mat.size()[0] != mat.size()[1])
-		throw new Error("Matrix must be square.");
-	if (vec.size().length == 1 && mat.size()[1] != vec.size()[0])
-		throw new Error(`Dimesion missmatch in second argument of solveLinear(), expected ${mat.size()[1]} but got ${vec.size()[0]}.`);
 
-	const result = [];
-	const D = math.det(mat);
-	for (let i = 0; i < mat.size()[0]; i++) {
-		// Select the desired row of the matrix and replace it with the "answer vector".
-		const partialMat = math.subset(
-			mat,
-			math.index(math.range(0, mat.size()[1]), i),
-			vec
-		);
-		const partialDet = math.det(partialMat);
-		if (D == 0 && partialDet != 0) {
-			console.warn("Impossible system.")
-			return IMPOSSIBLE_SYSTEM;
-		} else if (D != 0) {
-			result.push(partialDet / D);
-		}
-	}
-	if (D == 0) {
-		console.warn("Indeterminate system.");
-		return INDETERMINATE_SYSTEM;
-	}
-	return result;
+function transformLinear(coefs, coord_sys) {
+	const sys = coord_sys.inv();
+	const i = sys.basis.i;
+	const j = sys.basis.j;
+	const o = sys.origin;
+
+	const m = coefs[0] / coefs[1];
+	const b = coefs[2] / coefs[1];
+
+	const new_m = (m * i.x - i.y) / (j.y - m * j.x);
+	const new_b = b + m * o.x - o.y;
+	return [new_m, 1, new_b];
 }

@@ -26,7 +26,7 @@ let show_hitbox = false;
  */
 class UserVector extends p5.Vector {
 	static list = [];
-	constructor(x, y, label, clr, weight, movable_origin=false) {
+	constructor(x, y, label, clr, weight, mode="interactable") {
 		// The x, y values of the vector will always be written in the u, v basis and in units.
 		super(x, y, 0);
 		this.label = label !== undefined ? label : "";
@@ -46,7 +46,10 @@ class UserVector extends p5.Vector {
 
 		// The clickable object that allows the user to drag the vector.
 		this.clickable = new Clickable(shape);
-		this.movable_origin = movable_origin;
+		this.mode = mode;
+		if (this.mode === "interactable")
+			this.movable_origin = false;
+		
 		if (this.movable_origin)
 			this.clickable_origin = new Clickable(Shape.rect(0,
 															 -this.tip_size / 2,
@@ -94,7 +97,8 @@ class UserVector extends p5.Vector {
 		this.clickable.bounding_box.rotate_to(angle);
 
 		// Updates the clickable object.
-		this.clickable.update();
+		if (this.mode === "interactable")
+			this.clickable.update();
 		pop();
 
 		// If the clickable is not beeing dragged, change the drag offset of the

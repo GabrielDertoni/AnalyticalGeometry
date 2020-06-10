@@ -1,5 +1,3 @@
-
-
 function transform_mouse() {
 	let transform = getMatrix();
 	let mouse = createVector(mouseX, mouseY);
@@ -53,4 +51,36 @@ function roundTo(num, decimals) {
   let power = 1;
   for (let i = 0; i < decimals; i++) power *= 10;
   return Math.round(num * power) / power;
+}
+
+function solveLinear(mat, vec) {
+	if (mat.size().length != 2)
+		throw new Error("Matrix must be 2 dimentional.");
+	if (mat.size()[0] != mat.size()[1])
+		throw new Error("Matrix must be square.");
+	if (vec.size().length == 1 && mat.size()[1] != vec.size()[0])
+		throw new Error(`Dimesion missmatch in second argument of solveLinear(), expected ${mat.size()[1]} but got ${vec.size()[0]}.`);
+
+	const result = [];
+	const D = math.det(mat);
+	for (let i = 0; i < mat.size()[0]; i++) {
+		// Select the desired row of the matrix and replace it with the "answer vector".
+		const partialMat = math.subset(
+			mat,
+			math.index(math.range(0, mat.size()[1]), i),
+			vec
+		);
+		const partialDet = math.det(partialMat);
+		if (D == 0 && partialDet != 0) {
+			console.warn("Impossible system.")
+			return IMPOSSIBLE_SYSTEM;
+		} else if (D != 0) {
+			result.push(partialDet / D);
+		}
+	}
+	if (D == 0) {
+		console.warn("Indeterminate system.");
+		return INDETERMINATE_SYSTEM;
+	}
+	return result;
 }

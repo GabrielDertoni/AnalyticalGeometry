@@ -8,7 +8,7 @@ class Basis extends math.DenseMatrix {
 	}
 	static fromMatrix(mat) { return mat instanceof math.Matrix ? new Basis(mat.toArray()) : new Basis(mat); }
 	constructor(vecs) {
-		vecs = vecs.map(el => el instanceof p5.Vector ? Vector.vec2d(el.x, el.y) : el);
+		vecs = math.transpose(vecs.map(el => el instanceof p5.Vector ? Vector.vec2d(el.x, el.y) : el));
 		super(vecs)
 		if (math.det(this) == 0)
 			console.warn("Bases can't have linearly dependent vectors.");
@@ -36,6 +36,7 @@ class Basis extends math.DenseMatrix {
 }
 
 class CoordinateSystem extends math.DenseMatrix {
+	static screen = math.identity(3);
 	static lerp(from, to, val) {
 		return CoordinateSystem.fromMatrix(math.add(from, math.multiply(math.subtract(to, from), val)));
 	}
@@ -100,22 +101,14 @@ class Vector extends math.DenseMatrix {
 	set y(val) { this._data[1] = val; }
 	set z(val) { this._data[2] = val; }
 	set w(val) { this._data[3] = val; }
-	transform(basis) {
-		const res = math.multiply(
-			basis.changeMatrix,
-			this
-		);
-		return new Vector(res, basis);
-	}
-	invTransform(basis) {
-		const res = math.multiply(
-			basis.invChangeMatrix,
-			this.vec
-		);
-		return new Vector(res, Basis.fromMatrix(invChangeMatrix))
-	}
 	set_basis(basis) {
 		this.basis = basis;
+	}
+	transform(basis) {
+		return new Vector(math.multiply(
+			basis,
+			this
+		));
 	}
 	copy() { return new Vector(math.matrix(this), this.basis); }
 	multiply(val) { return new Vector(math.multiply(this, val), this.basis); }
@@ -126,14 +119,18 @@ class Vector extends math.DenseMatrix {
 	p5Vector() { return createVector(this.x, this.y); }
 }
 
-class Point {
+class Point2D {
 	constructor(x, y, coord_sys) {
 		this.x = x;
 		this.y = y;
 		if (coord_sys) this.coord_sys = coord_sys;
-		else this.coord_sys = screenCoordSys;
+		else this.coord_sys = CoordinateSystem.screen;
 	}
 	transform(coord_sys) {
-		return math.multiply
+		const result = math.multiply(
+			coord_sys,
+			[this.x, this.y, 1]
+		).toArray();
+		return new Point2D(result[0], result[1], coord_sys);
 	}
 }
