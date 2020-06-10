@@ -72,39 +72,49 @@ function setup() {
 	draw_fixed_grid_checkbox = createCheckbox('Grid', draw_fixed_grid);
 	draw_fixed_grid_checkbox.changed(() => draw_fixed_grid = draw_fixed_grid_checkbox.checked());
 	
-	show_hitbox_checkbox = createCheckbox('Hitbox', show_hitbox);
-	show_hitbox_checkbox.changed(() => show_hitbox = show_hitbox_checkbox.checked());
+	// show_hitbox_checkbox = createCheckbox('Hitbox', show_hitbox);
+	// show_hitbox_checkbox.changed(() => show_hitbox = show_hitbox_checkbox.checked());
 	
 	space_size_slider = createSlider(1, 10, 2, 0);
 	space_size_slider.style('width', '80px');
-	//div.position(10, 65);
-	add_vector_checkbox = createCheckbox('Add vector', add_vector);
-	add_vector_checkbox.changed(() => add_vector = add_vector_checkbox.checked());
+	
+	// add_vector_checkbox = createCheckbox('Add vector', add_vector);
+	// add_vector_checkbox.changed(() => add_vector = add_vector_checkbox.checked());
 
 	rotation_slider = createSlider(0, 360, 0, 0);
 	rotation_slider.style('width', '180px');
   
-	// g = new Conic(4, -4, 7, 12, 6, -8);
+	g = new Conic(4, -4, 7, 12, 6, -8); // Elipse
 	// g = new Conic(0, 0, -1, 1, 0, 0); // Parábola
 	// g = new Conic(0, 0, 0, 1, -1, 0); // Uma reta
-	g = new Conic(1, -4, 4, -6, 12, 8); // Duas retas
+	// g = new Conic(1, -4, 4, -6, 12, 8); // Duas retas
+	// g = new Conic(4, -4, 1, -8*sqrt(5), -16*sqrt(5), 0); // Parábola
+	// g = new Conic(1.22, 2.8, - 1, 1, 5.66, - 2.05); // Hipérbole Cagada
+	// g = new Conic(4, -4, 1, -8*sqrt(5), -10, 0); // Parábola bugada
+	
+	// g = new Conic(32, 52, -7, 0, 0, 180);
+	// g = new Conic(7, -6*sqrt(3), 13, 0, 0, -16);
+	// g = new Conic(4, -5, -11, -1, 37, 52);
+	// g = new Conic(1, 1, -2, -8*sqrt(2), -8*sqrt(2), 0);
+	// g = new Conic(17, -12, 8, 0, 0, 0);
 
-	a_slider = createSlider(-5, 5, g.a, 0);
+
+	a_slider = createSlider(min(-5, g.a), max(5, g.a), g.a, 0);
 	a_slider.style('width', '180px');
 
-	b_slider = createSlider(-5, 5, g.b, 0);
+	b_slider = createSlider(min(-5, g.b), max(5, g.b), g.b, 0);
 	b_slider.style('width', '180px');
 
-	c_slider = createSlider(-10, 10, g.c, 0);
+	c_slider = createSlider(min(-10, g.c), max(10, g.c), g.c, 0);
 	c_slider.style('width', '180px');
   
- 	d_slider = createSlider(-20, 20, g.d, 0);
+ 	d_slider = createSlider(min(-20, g.d), max(20, g.d), g.d, 0);
 	d_slider.style('width', '180px');
   
-	e_slider = createSlider(-10, 14, g.e, 0);
+	e_slider = createSlider(min(-10, g.e), max(14, g.e), g.e, 0);
 	e_slider.style('width', '180px');
   
-	f_slider = createSlider(-12, 12, g.f, 0);
+	f_slider = createSlider(min(-12, g.f), max(12, g.f), g.f, 0);
 	f_slider.style('width', '180px');
 
 	solve_btn = createButton("Resolver");
@@ -113,18 +123,18 @@ function setup() {
 		g.animateCoordSystemChange(global_coordinate_system, 0.005, () => is_playing = false);
 	});
 
-	attatch_btn = createButton("Usar como base");
-	attatch_btn.mouseClicked(() => {
-		g.set_coordinate_system(globalBasis);
-	})
+	// attatch_btn = createButton("Usar como base");
+	// attatch_btn.mouseClicked(() => {
+	// 	g.set_coordinate_system(global_coordinate_system);
+	// })
 
   // let group = createElement('ol');
 	let group = new p5.Element(document.getElementById("controls"));
 	let list_items = [
 		draw_fixed_grid_checkbox,
-		show_hitbox_checkbox,
+		// show_hitbox_checkbox,
 		wrapDiv(space_size_slider, label("Space size")),
-		add_vector_checkbox,
+		// add_vector_checkbox,
 		wrapDiv(rotation_slider, label("Rotation")),
 		wrapDiv(a_slider, label("a")),
 		wrapDiv(b_slider, label("b")),
@@ -132,8 +142,8 @@ function setup() {
 		wrapDiv(d_slider, label("d")),
 		wrapDiv(e_slider, label("e")),
 		wrapDiv(f_slider, label("f")),
-		wrapDiv(solve_btn),
-		wrapDiv(attatch_btn)
+		wrapDiv(solve_btn)//,
+		// wrapDiv(attatch_btn)
 	];
 
 	for (let i = 0; i < list_items.length; i++) {
@@ -146,6 +156,25 @@ function setup() {
 	group.mouseOut(() => mouse_over_group = false);
 
 	equation_text = new p5.Element(document.getElementById("equation"));
+	equation_info = new p5.Element(document.getElementById("equation-info"));
+	equation_info.mouseClicked(() => {
+		function printInfo(info) {
+			let str = "";
+			Object.keys(info).forEach(key => {
+				if (typeof info[key] == "string")
+					str += `${key}: ${info[key]}\n`;
+				else {
+					str += `${key}:\n`;
+					info[key].forEach((el, i) => {
+						str += `  ${(i + 1).toString()}. ${el}\n`;
+					});
+				}
+				str += '\n';
+			});
+			return str;
+		}
+		alert(printInfo(g.info));
+	});
 
 	textFont(font);
 
@@ -165,8 +194,8 @@ function setup() {
 	rotation = 0;
 	is_playing = false;
 
-	u = new UserVector(1, 0, "î", color(133, 192, 104), 5, false);
-	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5, false);
+	u = new UserVector(1, 0, "î", color(133, 192, 104), 5, "static");
+	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5, "static");
 
 	global_coordinate_system = new CoordinateSystem(Vector.vec2d(o.x, o.y), new Basis([u, v]));
 
@@ -179,7 +208,7 @@ function draw() {
 	else
 		equation_text.elt.textContent = g.toString();
 	
-	updateSliders();
+	// updateSliders();
 	// Update the slider values.
 	space_size = space_size_slider.value();
 
@@ -238,11 +267,6 @@ function draw() {
 		clickable_origin.update();
 		o.set(unscaled(clickable_origin.drag_offset));
 	}
-  
-	noFill();
-	stroke(DEFAULT_COLOR);
-	strokeWeight(2);
-	g.draw();
 
 	push();
 	translate(scaled(o).x, scaled(o).y);
@@ -261,6 +285,11 @@ function draw() {
 	for (let i = 0; i < user_vectors.length; i++)
 		user_vectors[i].draw();
 	
+  
+	noFill();
+	stroke(DEFAULT_COLOR);
+	strokeWeight(2);
+	g.draw();
 	pop();
 }
 
