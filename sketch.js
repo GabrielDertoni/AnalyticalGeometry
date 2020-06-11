@@ -339,8 +339,8 @@ function createNumberInput(val, lbl, legroom=5, callback=null) {
 	const slider = createSlider(val - legroom, val + legroom, val, 0);
 	const input = createInput(roundTo(val, 2).toString(), "number");
 	input.changed(() => {
-		slider.elt.min = min(slider.elt.min, input.value());
-		slider.elt.max = max(slider.elt.max, input.value());
+		slider.elt.min = parseFloat(input.value()) - legroom;
+		slider.elt.max = parseFloat(input.value()) + legroom;
 		slider.value(input.value());
 		if (callback) callback(parseFloat(input.value()));
 		input.value(roundTo(input.value(), 2));
