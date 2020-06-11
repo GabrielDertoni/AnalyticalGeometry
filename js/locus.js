@@ -277,12 +277,13 @@ class Conic {
 			info["Centro"] = `C = (${roundTo(this.coord_sys.origin.x, 2)}, ${roundTo(this.coord_sys.origin.y, 2)})`;
 			const a = sqrt(-this.new_f / this.new_a);
 			const b = sqrt(-this.new_f / this.new_c);
-			const c = sqrt(pow(a, 2) - pow(b, 2));
 			let f1, f2;
 			if (a > b) {
+				const c = sqrt(pow(a, 2) - pow(b, 2));
 				f1 = new Point2D( c, 0);
 				f2 = new Point2D(-c, 0);
 			} else {
+				const c = sqrt(pow(b, 2) - pow(a, 2));
 				f1 = new Point2D(0, c);
 				f2 = new Point2D(0, -c);
 			}
