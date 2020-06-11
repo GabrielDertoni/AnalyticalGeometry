@@ -28,27 +28,20 @@ class Conic {
 		const translation = this.solve_translation();
 		if (translation === IMPOSSIBLE_SYSTEM) {
 			[this.new_a, this.new_c, this.rotation] = this.solve_rotation();
-			const new_d =  this.d * cos(-this.rotation) + this.e * sin(-this.rotation);
-			const new_e = -this.d * sin(-this.rotation) + this.e * cos(-this.rotation);
+			const new_d =  this.d * cos(this.rotation) + this.e * sin(this.rotation);
+			const new_e = -this.d * sin(this.rotation) + this.e * cos(this.rotation);
 			if (new_d != 0 || new_e != 0) {
 				// Retry to solve translation.
 				if (this.new_a === 0) {
 					let transl = this.solve_vertex(-this.new_c / new_d, -new_e / new_d, -this.f / new_d);
 					transl = Vector.vec2d(transl.y, transl.x);
-					transl = transl.transform(Basis.fromMatrix(
-						[[cos(this.rotation), -sin(this.rotation)],
-						 [sin(this.rotation),  cos(this.rotation)]]
-					));
+					transl = transl.transform(Basis.fromAngle(this.rotation));
 					this.new_d = new_d;
 					this.coord_sys = new CoordinateSystem(transl, Basis.fromAngle(this.rotation));
 					this.new_e = 0;
 				} else {
-					const transl = this.solve_vertex(-this.new_a / new_e, -new_d / new_e, -this.f / new_e);
-					transl = transl.transform(Basis.fromMatrix(
-						[[cos(this.rotation), -sin(this.rotation)],
-						 [sin(this.rotation),  cos(this.rotation)]]
-					));
-					// this.center = createVector(transl[0], transl[1]);
+					let transl = this.solve_vertex(-this.new_a / new_e, -new_d / new_e, -this.f / new_e);
+					transl = transl.transform(Basis.fromAngle(this.rotation));
 					this.new_e = new_e;
 					this.coord_sys = new CoordinateSystem(transl, Basis.fromAngle(this.rotation));
 					this.new_d = 0;
@@ -97,8 +90,11 @@ class Conic {
 					if (str.length > 0) str += " - ";
 					else str += "-";
 				
-				if (decimals) str += abs(variables[i]).toFixed(decimals) + names[i];
-				else str += abs(roundTo(variables[i], 2)).toString() + names[i];
+				if (abs(roundTo(variables[i], 2)) - 1 != 0 || names[i] === '')
+					if (decimals) str += abs(variables[i]).toFixed(decimals);
+					else str += abs(roundTo(variables[i], 2)).toString();
+				
+				str += names[i];
 			}
 		}
 		str += " = 0";
@@ -124,7 +120,7 @@ class Conic {
 			return [this.a, this.c, rotation];
 		} else {
 			const cotg = (this.a - this.c) / this.b;
-			const rotation = -atan(sqrt(1 + pow(cotg, 2)) - cotg);
+			const rotation = atan(sqrt(1 + pow(cotg, 2)) - cotg);
 			const result = solveLinear(
 				math.matrix(
 					[[1, 1],
@@ -337,13 +333,9 @@ class Conic {
 				`V2 = (${roundTo(v2.x, 2)}, ${roundTo(v2.y, 2)})`
 			];
 			let [coefs1, coefs2] = this.get_asymptotes();
-			if (this.b !== 0) {
-				coefs1[1] = this.coord_sys.origin.y - coefs1[0] * this.coord_sys.origin.x;
-				coefs2[1] = this.coord_sys.origin.y - coefs2[0] * this.coord_sys.origin.x;
-			}
 			info["Assíntotas"] = [
-				`r: y = ${roundTo(coefs1[0], 2)}x + ${roundTo(coefs1[1], 2)}`,
-				`s: y = ${roundTo(coefs2[0], 2)}x + ${roundTo(coefs2[1], 2)}`
+				"r: y = " + coefs2str([coefs1[0], coefs1[2]], ['x', ''], 2),
+				"s: y = " + coefs2str([coefs2[0], coefs2[2]], ['x', ''], 2)
 			];
 		} else if (this.classification === "parable") {
 			info["Classificação"] = "Parábola";
@@ -358,11 +350,12 @@ class Conic {
 			
 			info["Foco"] = `F = (${roundTo(f.x, 2)}, ${roundTo(f.y, 2)})`;
 			info["Vértice"] = `V = (${roundTo(this.coord_sys.origin.x, 2)}, ${roundTo(this.coord_sys.origin.y, 2)})`;
-			const coefs = transformLinear([0, 1, 0], this.coord_sys);
-			if (this.b !== 0)
-				coefs[2] = this.coord_sys.origin.y - coefs[0] * this.coord_sys.origin.x;
-			
-			info["Eixo"] = `r: y = ${roundTo(coefs[0], 2)}x + ${roundTo(coefs[2], 2)}`;
+			const coefs1 = vec2coef(this.coord_sys.origin, this.coord_sys.basis.i);
+			const coefs2 = vec2coef(this.coord_sys.origin, this.coord_sys.basis.j);
+			info["Eixos"] = [
+				"r: y = " + coefs2str([coefs1[0], coefs1[2]], ['x', ''], 2),
+				"s: y = " + coefs2str([coefs2[0], coefs2[2]], ['x', ''], 2)
+			];
 		} else if (this.classification === "competing_lines") {
 			info["Classificação"] = "Retas Concorrentes";
 		} else if (this.classification === "paralel_lines") {
@@ -440,12 +433,12 @@ class Conic {
 			this.is_playing = true;
 		} else {
 			this.coord_sys = CoordinateSystem.lerp(this.coord_sys_from, this.coord_sys_to, lerp);
-			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys);
+			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys_to);
 		}
 		if (lerp < 1) window.requestAnimationFrame(() => this.animateCoordSystemChange(null, step, finish_callback, lerp + step));
 		else {
 			this.is_playing = false;
-			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys);
+			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys_to);
 			this.recalculate();
 			
 			if (finish_callback) window.requestAnimationFrame(finish_callback);
@@ -456,22 +449,27 @@ class Conic {
 		const a = sqrt(abs(this.new_f / this.new_a));
 		const b = sqrt(abs(this.new_f / this.new_c));
 		const m = b / a;
-		// this.coord_sys
-		const sol1 = transformLinear([ m, 1, 0], this.coord_sys);
-		const sol2 = transformLinear([-m, 1, 0], this.coord_sys);
+
+		const w = Vector.vec2d(1, m);
+		const t = Vector.vec2d(1,-m);
+
+		const w_s = w.transform(this.coord_sys.basis);
+		const t_s = t.transform(this.coord_sys.basis);
+
 		return [
-			[sol1[0], sol1[2]],
-			[sol2[0], sol2[2]]
+			vec2coef(this.coord_sys.origin, w_s),
+			vec2coef(this.coord_sys.origin, t_s)
 		];
 	}
 	get_equation_for(new_coord_sys) {
 		// const coord_sys_s = this.coord_sys.inv();
-		// const sys = CoordinateSystem.fromMatrix(math.multiply(
-		// 	coord_sys_s,
-		// 	new_coord_sys
-		// ));
+		const sys = CoordinateSystem.fromMatrix(math.multiply(
+			this.coord_sys.inv(),
+			new_coord_sys
+		));
+		// const sys = new_coord_sys.inv();
 
-		const sys = new_coord_sys.inv();
+		// const sys = new_coord_sys.inv();
 		const i = sys.basis.i;
 		const j = sys.basis.j;
 		const o = sys.origin;
@@ -486,17 +484,25 @@ class Conic {
 	}
 }
 
+function vec2coef(point, vec) {
+	return [vec.y / vec.x, -1, -point.x * (vec.y / vec.x) + point.y];
+}
 
-function transformLinear(coefs, coord_sys) {
-	const sys = coord_sys.inv();
-	const i = sys.basis.i;
-	const j = sys.basis.j;
-	const o = sys.origin;
-
-	const m = coefs[0] / coefs[1];
-	const b = coefs[2] / coefs[1];
-
-	const new_m = (m * i.x - i.y) / (j.y - m * j.x);
-	const new_b = b + m * o.x - o.y;
-	return [new_m, 1, new_b];
+function coefs2str(coefs, names, decimals) {
+	let str = "";
+	for (let i = 0; i < coefs.length; i++) {
+		if (abs(coefs[i]) > 0.01) {
+			if (coefs[i] > 0 && str.length > 0) str += " + ";
+			else if (coefs[i] < 0)
+				if (str.length > 0) str += " - ";
+				else str += "-";
+			
+			if (abs(roundTo(coefs[i], 2)) - 1 != 0 || names[i] === '')
+				if (decimals) str += abs(coefs[i]).toFixed(decimals);
+				else str += abs(roundTo(coefs[i], 2)).toString();
+			
+			str += names[i];
+		}
+	}
+	return str;
 }

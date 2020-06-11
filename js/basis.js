@@ -2,8 +2,8 @@ class Basis extends math.DenseMatrix {
   static screen = math.identity(2);
 	static fromAngle(ang) {
 		return new Basis(
-			[[cos(ang), -sin(ang)],
-			 [sin(ang),  cos(ang)]]
+			[[ cos(ang), sin(ang)],
+			 [-sin(ang), cos(ang)]]
 		);
 	}
 	static fromMatrix(mat) { return mat instanceof math.Matrix ? new Basis(mat.toArray()) : new Basis(mat); }

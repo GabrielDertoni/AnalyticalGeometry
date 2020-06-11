@@ -84,38 +84,20 @@ function setup() {
 	rotation_slider = createSlider(0, 360, 0, 0);
 	rotation_slider.style('width', '180px');
   
-	g = new Conic(4, -4, 7, 12, 6, -8); // Elipse
+	// g = new Conic(4, -4, 7, 12, 6, -8); // Elipse
 	// g = new Conic(0, 0, -1, 1, 0, 0); // Parábola
 	// g = new Conic(0, 0, 0, 1, -1, 0); // Uma reta
 	// g = new Conic(1, -4, 4, -6, 12, 8); // Duas retas
 	// g = new Conic(4, -4, 1, -8*sqrt(5), -16*sqrt(5), 0); // Parábola
 	// g = new Conic(1.22, 2.8, - 1, 1, 5.66, - 2.05); // Hipérbole Cagada
-	// g = new Conic(4, -4, 1, -8*sqrt(5), -10, 0); // Parábola bugada
+	g = new Conic(4, -4, 1, -8*sqrt(5), -10, 0); // Parábola bugada
 	
 	// g = new Conic(32, 52, -7, 0, 0, 180);
 	// g = new Conic(7, -6*sqrt(3), 13, 0, 0, -16);
 	// g = new Conic(4, -5, -11, -1, 37, 52);
 	// g = new Conic(1, 1, -2, -8*sqrt(2), -8*sqrt(2), 0);
 	// g = new Conic(17, -12, 8, 0, 0, 0);
-
-
-	a_slider = createSlider(min(-5, g.a), max(5, g.a), g.a, 0);
-	a_slider.style('width', '180px');
-
-	b_slider = createSlider(min(-5, g.b), max(5, g.b), g.b, 0);
-	b_slider.style('width', '180px');
-
-	c_slider = createSlider(min(-10, g.c), max(10, g.c), g.c, 0);
-	c_slider.style('width', '180px');
-  
- 	d_slider = createSlider(min(-20, g.d), max(20, g.d), g.d, 0);
-	d_slider.style('width', '180px');
-  
-	e_slider = createSlider(min(-10, g.e), max(14, g.e), g.e, 0);
-	e_slider.style('width', '180px');
-  
-	f_slider = createSlider(min(-12, g.f), max(12, g.f), g.f, 0);
-	f_slider.style('width', '180px');
+	// g = new Conic(1, 0, -1, 0, 0, -1);
 
 	solve_btn = createButton("Resolver");
 	solve_btn.mouseClicked(() => {
@@ -128,24 +110,18 @@ function setup() {
 	// 	g.set_coordinate_system(global_coordinate_system);
 	// })
 
-  // let group = createElement('ol');
 	let group = new p5.Element(document.getElementById("controls"));
 	let list_items = [
 		draw_fixed_grid_checkbox,
-		// show_hitbox_checkbox,
-		wrapDiv(space_size_slider, label("Space size")),
-		// add_vector_checkbox,
-		wrapDiv(rotation_slider, label("Rotation")),
-		wrapDiv(a_slider, label("a")),
-		wrapDiv(b_slider, label("b")),
-		wrapDiv(c_slider, label("c")),
-		wrapDiv(d_slider, label("d")),
-		wrapDiv(e_slider, label("e")),
-		wrapDiv(f_slider, label("f")),
-		wrapDiv(solve_btn)//,
-		// wrapDiv(attatch_btn)
-	];
-
+		createNumberInput(g.a, "a", 5, val => { g.a = val; g.recalculate(); }),
+		createNumberInput(g.b, "b", 5, val => { g.b = val; g.recalculate(); }),
+		createNumberInput(g.c, "c", 5, val => { g.c = val; g.recalculate(); }),
+		createNumberInput(g.d, "d", 5, val => { g.d = val; g.recalculate(); }),
+		createNumberInput(g.e, "e", 5, val => { g.e = val; g.recalculate(); }),
+		createNumberInput(g.f, "f", 5, val => { g.f = val; g.recalculate(); }),
+		wrapDiv(solve_btn)
+	]
+	
 	for (let i = 0; i < list_items.length; i++) {
 		let li = createElement('li');
 		list_items[i].parent(li);
@@ -215,8 +191,8 @@ function draw() {
 	if (!is_playing) {
 		const val = map(rotation_slider.value(), 0, 360, 0, TWO_PI);
 		if (abs(val - rotation) > eps) {
-			u.rotate(val - rotation);
-			v.rotate(val - rotation);
+			u.rotate(rotation - val);
+			v.rotate(rotation - val);
 			rotation = val;
 			is_dragging = true;
 		}
@@ -358,3 +334,20 @@ function updateSliders() {
 
 function scaled(val) { return val instanceof p5.Vector ? p5.Vector.mult(val, scl) : val * scl; }
 function unscaled(val) { return val instanceof p5.Vector ? p5.Vector.div(val, scl) : val * scl; }
+
+function createNumberInput(val, lbl, legroom=5, callback=null) {
+	const slider = createSlider(val - legroom, val + legroom, val, 0);
+	const input = createInput(roundTo(val, 2).toString(), "number");
+	input.changed(() => {
+		slider.elt.min = min(slider.elt.min, input.value());
+		slider.elt.max = max(slider.elt.max, input.value());
+		slider.value(input.value());
+		if (callback) callback(parseFloat(input.value()));
+		input.value(roundTo(input.value(), 2));
+	});
+	slider.input(() => {
+		input.value(roundTo(slider.value(), 2));
+		if (callback) callback(parseFloat(slider.value()));
+	})
+	return wrapDiv(slider, input, label(lbl));
+}
