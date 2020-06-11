@@ -238,7 +238,11 @@ class Conic {
 		if (d33 > 0)
 			if (det != 0)
 				if (t * det > 0) return "void";
-				else return "ellipse";
+				else 
+					if(this.new_a === this.new_c){
+						return "circle";
+					}else
+						return "ellipse";
 			else return "point";
 		else if (d33 < 0)
 			if (det != 0) return "hyperbole";
@@ -365,6 +369,8 @@ class Conic {
 			info["Classificação"] = "Reta";
 		} else if (this.classification === "point") {
 			info["Classificação"] = "Ponto";
+		} else if(this.classification === "circle"){
+			info["Classificação"] = "Círculo";
 		}
 		return info;
 	}
