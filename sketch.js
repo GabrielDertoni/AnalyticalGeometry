@@ -69,7 +69,7 @@ function setup() {
 	createCanvas(windowWidth, windowHeight);
 	
 	// Setup all of the html interactive inputs (slidesrs, checkboxes, etc).
-	draw_fixed_grid_checkbox = createCheckbox('Grid', draw_fixed_grid);
+	draw_fixed_grid_checkbox = createCheckbox('Grade', draw_fixed_grid);
 	draw_fixed_grid_checkbox.changed(() => draw_fixed_grid = draw_fixed_grid_checkbox.checked());
 	
 	// show_hitbox_checkbox = createCheckbox('Hitbox', show_hitbox);
@@ -104,23 +104,23 @@ function setup() {
 		is_playing = true;
 		g.animateCoordSystemChange(global_coordinate_system, 0.005, () => is_playing = false);
 	});
-
-	// attatch_btn = createButton("Usar como base");
-	// attatch_btn.mouseClicked(() => {
-	// 	g.set_coordinate_system(global_coordinate_system);
-	// })
-
-	let group = new p5.Element(document.getElementById("controls"));
-	let list_items = [
-		draw_fixed_grid_checkbox,
+	
+	inputs = [
 		createNumberInput(g.a, "a", 5, val => { g.a = val; g.recalculate(); }),
 		createNumberInput(g.b, "b", 5, val => { g.b = val; g.recalculate(); }),
 		createNumberInput(g.c, "c", 5, val => { g.c = val; g.recalculate(); }),
 		createNumberInput(g.d, "d", 5, val => { g.d = val; g.recalculate(); }),
 		createNumberInput(g.e, "e", 5, val => { g.e = val; g.recalculate(); }),
-		createNumberInput(g.f, "f", 5, val => { g.f = val; g.recalculate(); }),
-		wrapDiv(solve_btn)
-	]
+		createNumberInput(g.f, "f", 5, val => { g.f = val; g.recalculate(); })
+	];
+
+	let group = new p5.Element(document.getElementById("controls"));
+	let list_items = [
+		draw_fixed_grid_checkbox//,
+		// wrapDiv(space_size_slider, label("Espaço"))
+	];
+	list_items = list_items.concat(inputs.map(inp => inp.div));
+	list_items.push(wrapDiv(solve_btn));
 	
 	for (let i = 0; i < list_items.length; i++) {
 		let li = createElement('li');
@@ -170,8 +170,8 @@ function setup() {
 	rotation = 0;
 	is_playing = false;
 
-	u = new UserVector(1, 0, "î", color(133, 192, 104), 5, "static");
-	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5, "static");
+	u = new UserVector(1, 0, "î", color(133, 192, 104), 5, "interactive");
+	v = new UserVector(0, 1, "ĵ", color(235, 92, 79), 5, "interactive");
 
 	global_coordinate_system = new CoordinateSystem(Vector.vec2d(o.x, o.y), new Basis([u, v]));
 
@@ -179,12 +179,15 @@ function setup() {
 }
 
 function draw() {
-	if (g.is_playing)
+	if (g.is_playing) {
 		equation_text.elt.textContent = g.toString(1);
-	else
+		const keys = "abcdef";
+		inputs.forEach((input, i) => {
+			input.value(g[keys[i]]);
+		});
+	} else
 		equation_text.elt.textContent = g.toString();
 	
-	// updateSliders();
 	// Update the slider values.
 	space_size = space_size_slider.value();
 
@@ -261,12 +264,12 @@ function draw() {
 	for (let i = 0; i < user_vectors.length; i++)
 		user_vectors[i].draw();
 	
-  
+	pop();
+	
 	noFill();
 	stroke(DEFAULT_COLOR);
 	strokeWeight(2);
 	g.draw();
-	pop();
 }
 
 function mousePressed() {
@@ -289,49 +292,6 @@ function createUserVector(origin, vector, label, clr, weight) {
 	return vec;
 }
 
-function updateSliders() {
-	if (abs(g.a - a_slider.value()) > eps ||
-		abs(g.b - b_slider.value()) > eps ||
-		abs(g.c - c_slider.value()) > eps ||
-		abs(g.d - d_slider.value()) > eps ||
-		abs(g.e - e_slider.value()) > eps ||
-		abs(g.f - f_slider.value()) > eps) {
-		if (!is_playing) {
-			g.a = a_slider.value();
-			g.b = b_slider.value();
-			g.c = c_slider.value();
-			g.d = d_slider.value();
-			g.e = e_slider.value();
-			g.f = f_slider.value();
-			g.recalculate();
-		} else {
-			a_slider.elt.min = min(a_slider.elt.min, g.a);
-			a_slider.elt.max = max(a_slider.elt.max, g.a);
-			a_slider.value(g.a);
-			
-			b_slider.elt.min = min(b_slider.elt.min, g.b);
-			b_slider.elt.max = max(b_slider.elt.max, g.b);
-			b_slider.value(g.b);
-			
-			c_slider.elt.min = min(c_slider.elt.min, g.c);
-			c_slider.elt.max = max(c_slider.elt.max, g.c);
-			c_slider.value(g.c);
-			
-			d_slider.elt.min = min(d_slider.elt.min, g.d);
-			d_slider.elt.max = max(d_slider.elt.max, g.d);
-			d_slider.value(g.d);
-			
-			e_slider.elt.min = min(e_slider.elt.min, g.e);
-			e_slider.elt.max = max(e_slider.elt.max, g.e);
-			e_slider.value(g.e);
-			
-			f_slider.elt.min = min(f_slider.elt.min, g.f);
-			f_slider.elt.max = max(f_slider.elt.max, g.f);
-			f_slider.value(g.f);
-		}
-	}
-}
-
 function scaled(val) { return val instanceof p5.Vector ? p5.Vector.mult(val, scl) : val * scl; }
 function unscaled(val) { return val instanceof p5.Vector ? p5.Vector.div(val, scl) : val * scl; }
 
@@ -349,5 +309,16 @@ function createNumberInput(val, lbl, legroom=5, callback=null) {
 		input.value(roundTo(slider.value(), 2));
 		if (callback) callback(parseFloat(slider.value()));
 	})
-	return wrapDiv(slider, input, label(lbl));
+	return {
+		div: wrapDiv(slider, input, label(lbl)),
+		value: val => {
+			if (val) {
+				input.value(roundTo(val, 2));
+				slider.elt.min = parseFloat(val) - legroom;
+				slider.elt.max = parseFloat(val) + legroom;
+				return slider.value(val);
+			}
+			return slider.value();
+		}
+	};
 }

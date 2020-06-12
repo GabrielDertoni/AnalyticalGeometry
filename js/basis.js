@@ -17,7 +17,7 @@ class Basis extends math.DenseMatrix {
 			throw new Error("Dimention missmatch, basis matrix must be square.");
 	}
 	copy() {
-		return new Basis(math.matrix(this).toArray());
+		return new Basis(math.transpose(math.matrix(this).toArray()));
 	}
 	get i() {
 		return new Vector(this.subset(math.index(math.range(0, this.size()[1]), 0)).reshape([this.size()[1]]));
@@ -47,7 +47,7 @@ class CoordinateSystem extends math.DenseMatrix {
 				mat.subset(math.index(math.range(0, mat.size()[0]-1), mat.size()[1]-1)).reshape([mat.size()[0]-1])
 			),
 			Basis.fromMatrix(
-				mat.subset(math.index(math.range(0, mat.size()[0]-1), math.range(0, mat.size()[1]-1)))
+				math.transpose(mat.subset(math.index(math.range(0, mat.size()[0]-1), math.range(0, mat.size()[1]-1))))
 			)
 		);
 	}

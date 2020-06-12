@@ -71,15 +71,15 @@ function solveLinear(mat, vec) {
 			vec
 		);
 		const partialDet = math.det(partialMat);
-		if (D == 0 && partialDet != 0) {
-			console.warn("Impossible system.")
+		if (abs(D) < eps && partialDet != 0) {
+			// console.warn("Impossible system.")
 			return IMPOSSIBLE_SYSTEM;
-		} else if (D != 0) {
+		} else if (abs(D) > eps) {
 			result.push(partialDet / D);
 		}
 	}
-	if (D == 0) {
-		console.warn("Indeterminate system.");
+	if (abs(D) < eps) {
+		// console.warn("Indeterminate system.");
 		return INDETERMINATE_SYSTEM;
 	}
 	return result;

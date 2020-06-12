@@ -15,6 +15,13 @@ class Conic {
 		this.recalculate();
 	}
 	recalculate() {
+		this.a = roundTo(this.a, 2);
+		this.b = roundTo(this.b, 2);
+		this.c = roundTo(this.c, 2);
+		this.d = roundTo(this.d, 2);
+		this.e = roundTo(this.e, 2);
+		this.f = roundTo(this.f, 2);
+
 		this.mat = math.matrix(
 			[[this.a    , this.b / 2, this.d / 2],
 			 [this.b / 2, this.c    , this.e / 2],
@@ -80,25 +87,7 @@ class Conic {
 		this.new_b = 0;
 	}
 	toString(decimals) {
-		let variables = [this.a, this.b, this.c, this.d, this.e, this.f];
-		let names = ['x²', 'xy', 'y²', 'x', 'y', ''];
-		let str = "";
-		for (let i = 0; i < variables.length; i++) {
-			if (abs(variables[i]) > 0.01) {
-				if (variables[i] > 0 && str.length > 0) str += " + ";
-				else if (variables[i] < 0)
-					if (str.length > 0) str += " - ";
-					else str += "-";
-				
-				if (abs(roundTo(variables[i], 2)) - 1 != 0 || names[i] === '')
-					if (decimals) str += abs(variables[i]).toFixed(decimals);
-					else str += abs(roundTo(variables[i], 2)).toString();
-				
-				str += names[i];
-			}
-		}
-		str += " = 0";
-		return str;
+		return coefs2str([this.a, this.b, this.c, this.d, this.e, this.f], ['x²', 'xy', 'y²', 'x', 'y', ''], decimals) + " = 0";
 	}
 	// Find the vertex of a quadratic equation.
 	solve_vertex = (a, b, c) => new Vector([-b / (2 * a), (4 * a * c - pow(b, 2)) / (4 * a)]);
@@ -224,16 +213,24 @@ class Conic {
 		return [plst1, plst2];
 	}
 	get transformationMatrix() {
-		return this.coord_sys;
+		// return this.coord_sys;
+		return CoordinateSystem.fromMatrix(math.multiply(
+			global_coordinate_system,
+			this.coord_sys
+		));
 	}
 	// Classify the conic by type
 	get classification() {
-		const t = this.a + this.c;
-		const d11 = (this.c/2 * this.f) - (this.e/2 * this.e/2);
-		const d22 = (this.a   * this.f) - (this.d/2 * this.d/2);
-		const d33 = (this.a   * this.c) - (this.b/2 * this.b/2);
+		const t = this.new_a + this.new_c;
+		const d11 = (this.new_c/2 * this.new_f) - (this.new_e/2 * this.new_e/2);
+		const d22 = (this.new_a   * this.new_f) - (this.new_d/2 * this.new_d/2);
+		const d33 = (this.new_a   * this.new_c) - (this.new_b/2 * this.new_b/2);
 		
-		const det = math.det(this.mat);
+		const det = math.det(math.matrix(
+			[[this.new_a    , this.new_b / 2, this.new_d / 2],
+			 [this.new_b / 2, this.new_c    , this.new_e / 2],
+			 [this.new_d / 2, this.new_e / 2, this.new_f    ]]
+		));
 
 		if (d33 > 0)
 			if (det != 0)
@@ -257,16 +254,13 @@ class Conic {
 				1. <foco1>
 				2. <foco2>
 				...
-			
 			Vértice?:
 				1. <vertice1>
 				2. <vertice2>
 				...
-			
 			Assíntotas?:
 				1. <formula1>
 				2. <formula2>
-			
 			Eixo?: <equação>
 		*/
 		const info = {};
@@ -351,12 +345,29 @@ class Conic {
 			
 			info["Foco"] = `F = (${roundTo(f.x, 2)}, ${roundTo(f.y, 2)})`;
 			info["Vértice"] = `V = (${roundTo(this.coord_sys.origin.x, 2)}, ${roundTo(this.coord_sys.origin.y, 2)})`;
-			const coefs1 = vec2coef(this.coord_sys.origin, this.coord_sys.basis.i);
-			const coefs2 = vec2coef(this.coord_sys.origin, this.coord_sys.basis.j);
-			info["Eixos"] = [
-				"r: y = " + coefs2str([coefs1[0], coefs1[2]], ['x', ''], 2),
-				"s: y = " + coefs2str([coefs2[0], coefs2[2]], ['x', ''], 2)
-			];
+			info["Eixos"] = [];
+			if (roundTo(this.coord_sys.basis.i.x, 12) != 0) {
+				const coefs = vec2coefY(this.coord_sys.origin, this.coord_sys.basis.i);
+				info["Eixos"].push(
+					"r: y = " + coefs2str([coefs[0], coefs[2]], ['x', ''], 2)
+				);
+			} else {
+				const coefs = vec2coefX(this.coord_sys.origin, this.coord_sys.basis.i);
+				info["Eixos"].push(
+					"r: x = " + coefs2str([coefs[1], coefs[2]], ['y', ''], 2)
+				);
+			}
+			if (roundTo(this.coord_sys.basis.j.x, 12) != 0) {
+				const coefs = vec2coefY(this.coord_sys.origin, this.coord_sys.basis.j);
+				info["Eixos"].push(
+					"s: y = " + coefs2str([coefs[0], coefs[2]], ['x', ''], 2)
+				);
+			} else {
+				const coefs = vec2coefX(this.coord_sys.origin, this.coord_sys.basis.j);
+				info["Eixos"].push(
+					"s: x = " + coefs2str([coefs[1], coefs[2]], ['y', ''], 2)
+				);
+			}
 		} else if (this.classification === "competing_lines") {
 			info["Classificação"] = "Retas Concorrentes";
 		} else if (this.classification === "paralel_lines") {
@@ -428,18 +439,19 @@ class Conic {
 		pop();
 	}
 	animateCoordSystemChange(coord_sys_to, step, finish_callback, lerp=0) {
-		if (coord_sys_to) {
+		if (coord_sys_to && !this.is_playing) {
 			this.coord_sys_from = this.coord_sys.copy();
 			this.coord_sys_to = coord_sys_to;
 			this.is_playing = true;
 		} else {
-			this.coord_sys = CoordinateSystem.lerp(this.coord_sys_from, this.coord_sys_to, lerp);
-			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys_to);
+			this.coord_sys = CoordinateSystem.lerp(this.coord_sys_from, CoordinateSystem.fromMatrix(math.identity(3)), lerp);
+			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_global_coefs();
 		}
+		// console.log(`g.animateCoordSystemChange(null, ${step}, undefined, ${lerp + step});`);
 		if (lerp < 1) window.requestAnimationFrame(() => this.animateCoordSystemChange(null, step, finish_callback, lerp + step));
 		else {
 			this.is_playing = false;
-			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_equation_for(this.coord_sys_to);
+			[this.a, this.b, this.c, this.d, this.e, this.f] = this.get_global_coefs();
 			this.recalculate();
 			
 			if (finish_callback) window.requestAnimationFrame(finish_callback);
@@ -462,15 +474,8 @@ class Conic {
 			vec2coef(this.coord_sys.origin, t_s)
 		];
 	}
-	get_equation_for(new_coord_sys) {
-		// const coord_sys_s = this.coord_sys.inv();
-		const sys = CoordinateSystem.fromMatrix(math.multiply(
-			this.coord_sys.inv(),
-			new_coord_sys
-		));
-		// const sys = new_coord_sys.inv();
-
-		// const sys = new_coord_sys.inv();
+	get_global_coefs() {
+		const sys = this.coord_sys.inv();
 		const i = sys.basis.i;
 		const j = sys.basis.j;
 		const o = sys.origin;
@@ -485,8 +490,12 @@ class Conic {
 	}
 }
 
-function vec2coef(point, vec) {
+function vec2coefY(point, vec) {
 	return [vec.y / vec.x, -1, -point.x * (vec.y / vec.x) + point.y];
+}
+
+function vec2coefX(point, vec) {
+	return [-1, vec.x / vec.y, -point.y * (vec.x / vec.y) + point.x];
 }
 
 function coefs2str(coefs, names, decimals) {
@@ -505,5 +514,6 @@ function coefs2str(coefs, names, decimals) {
 			str += names[i];
 		}
 	}
+	if (str.length === 0) str += "0";
 	return str;
 }
