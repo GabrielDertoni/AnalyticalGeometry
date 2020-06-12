@@ -413,7 +413,7 @@ class Conic {
 	draw() {
 		push();
 		this.applyMatrix();
-		if (this.classification == "ellipse") {
+		if (this.classification == "ellipse" || this.classification == "circle") {
 			const A = 2 * sqrt(-this.new_f / this.new_a);
 			const B = 2 * sqrt(-this.new_f / this.new_c);
 			ellipse(0, 0, scaled(A), scaled(B));
@@ -473,8 +473,8 @@ class Conic {
 		const t_s = t.transform(this.coord_sys.basis);
 
 		return [
-			vec2coef(this.coord_sys.origin, w_s),
-			vec2coef(this.coord_sys.origin, t_s)
+			vec2coefY(this.coord_sys.origin, w_s),
+			vec2coefY(this.coord_sys.origin, t_s)
 		];
 	}
 	get_global_coefs() {
