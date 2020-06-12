@@ -235,11 +235,8 @@ class Conic {
 		if (d33 > 0)
 			if (det != 0)
 				if (t * det > 0) return "void";
-				else 
-					if(this.new_a === this.new_c){
-						return "circle";
-					}else
-						return "ellipse";
+				else if(this.new_a === this.new_c) return "circle";
+				else return "ellipse";
 			else return "point";
 		else if (d33 < 0)
 			if (det != 0) return "hyperbole";
@@ -247,7 +244,7 @@ class Conic {
 		else if (det != 0) return "parable";
 		else if (d11 + d22 == 0) return "line";
 		else if(d11 + d22 > 0) return "void";
-		else if (this.a == 0 && this.b/2 == 0 && this.c == 0) return "line";
+		else if (this.new_a == 0 && this.new_b/2 == 0 && this.new_c == 0) return "line";
 		else return "paralel_lines";
 	}
 	get info() {

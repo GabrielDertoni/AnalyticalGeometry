@@ -35,7 +35,7 @@ let mouse_over_group;
 
 let font;
 
-let eps = 0.0001; // Small value used for comparisons with floating point values.
+const eps = 1e-12; // Small value used for comparisons with floating point values.
 let u, v, o; // u and v are base vectors. o is the origin vector aka. o = (0, 0).
 let global_coordinate_system;
 let clickable_origin;
@@ -59,6 +59,7 @@ let scl; // The size of the vectors in pixels. Size of a unit in pixels.
 let user_vectors = [] // List of user created vectors.
 
 let equation_text;
+let info_modal;
 
 function preload() {
 	font = loadFont('fonts/cmunti.otf');
@@ -116,8 +117,9 @@ function setup() {
 
 	let group = new p5.Element(document.getElementById("controls"));
 	let list_items = [
-		draw_fixed_grid_checkbox//,
-		// wrapDiv(space_size_slider, label("Espaço"))
+		draw_fixed_grid_checkbox,
+		wrapDiv(space_size_slider, label("Espaço")),
+		wrapDiv(rotation_slider, label("Rotação"))
 	];
 	list_items = list_items.concat(inputs.map(inp => inp.div));
 	list_items.push(wrapDiv(solve_btn));
@@ -131,6 +133,8 @@ function setup() {
 	group.mouseOver(() => mouse_over_group = true);
 	group.mouseOut(() => mouse_over_group = false);
 
+	info_modal = new p5.Element(document.getElementById("info-modal"));
+	info_modal.elt.getElementsByClassName("close")[0].addEventListener("click", () => info_modal.style("display", "none"));
 	equation_text = new p5.Element(document.getElementById("equation"));
 	equation_info = new p5.Element(document.getElementById("equation-info"));
 	equation_info.mouseClicked(() => {
@@ -138,18 +142,23 @@ function setup() {
 			let str = "";
 			Object.keys(info).forEach(key => {
 				if (typeof info[key] == "string")
-					str += `${key}: ${info[key]}\n`;
+					str += `<p>${key}: ${info[key]}</p>\n`;
 				else {
-					str += `${key}:\n`;
-					info[key].forEach((el, i) => {
-						str += `  ${(i + 1).toString()}. ${el}\n`;
+					str += `<p class="title">${key}:</p>\n`;
+					str += '<ol class="titled">\n'
+					info[key].forEach(el => {
+						str += `<li>${el}</li>\n`;
 					});
+					str += "</ol>\n"
 				}
 				str += '\n';
 			});
 			return str;
 		}
-		alert(printInfo(g.info));
+		// alert(printInfo(g.info));
+		const info_content = new p5.Element(info_modal.elt.getElementsByClassName("modal-body")[0]);
+		info_content.elt.innerHTML = printInfo(g.info);
+		info_modal.style("display", "block");
 	});
 
 	textFont(font);
